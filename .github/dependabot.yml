@@ -3,8 +3,8 @@ updates:
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
-      interval: "dayly"
+      interval: "daily"
   - package-ecosystem: "gradle"
     directory: "/prototype"
     schedule:
-      interval: "dayly"
+      interval: "daily"
