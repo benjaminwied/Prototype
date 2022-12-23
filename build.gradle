@@ -1,0 +1,35 @@
+
+plugins {
+    id "java-library"
+    id "pl.allegro.tech.build.axion-release" version "1.14.3"
+    id "com.github.hierynomus.license" version "0.16.1"
+}
+
+allprojects {
+    group = "com.github.cleverelephant.prototype"
+    version = scmVersion.version
+    
+    apply plugin: "java-library"
+    apply plugin: "pl.allegro.tech.build.axion-release"
+    apply plugin: "com.github.hierynomus.license"
+
+    repositories {
+        mavenCentral()
+    }
+
+    java {
+        sourceCompatibility = "18"
+        targetCompatibility = "18"
+    }
+    
+    license {
+        header = rootProject.file("gradle/header.txt")
+        
+        ext {
+            year = Calendar.getInstance().get(Calendar.YEAR)
+            name = "Benjamin Wied"
+            email = "88872078+CleverElephant@users.noreply.github.com"
+        }
+    }
+
+}
