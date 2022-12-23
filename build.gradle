@@ -3,6 +3,7 @@ plugins {
     id "java-library"
     id "pl.allegro.tech.build.axion-release" version "1.14.3"
     id "com.github.hierynomus.license" version "0.16.1"
+    id "io.freefair.lombok" version "6.6.1"
 }
 
 allprojects {
@@ -12,6 +13,7 @@ allprojects {
     apply plugin: "java-library"
     apply plugin: "pl.allegro.tech.build.axion-release"
     apply plugin: "com.github.hierynomus.license"
+    apply plugin: "io.freefair.lombok"
 
     repositories {
         mavenCentral()
