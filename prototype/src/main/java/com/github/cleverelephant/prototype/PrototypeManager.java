@@ -28,22 +28,23 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("javadoc")
-@Slf4j
 public final class PrototypeManager
 {
     private static final Pattern PROTOTYPE_WITH_ARG_PATTERN = Pattern
             .compile("^(?<name>\\w+)(?:\\[(?<arg>\\w+)\\])?$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern PROTOTYPE_NAME_PATTERN = Pattern
             .compile("^\\w+(?:/\\w+)*$", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeManager.class);
 
     private static final Map<String, Prototype<?>> PROTOTYPE_MAP = new HashMap<>();
     private static final Map<Class<? extends Prototype<?>>, PrototypeBuilder<?, ?>> BUILDER_MAP = new HashMap<>();
@@ -54,37 +55,43 @@ public final class PrototypeManager
     }
 
     public static <T, P extends Prototype<? extends T>> void registerBuilder(
-            @NonNull Class<P> prototypeClass, @NonNull PrototypeBuilder<T, P> builder
+            Class<P> prototypeClass, PrototypeBuilder<T, P> builder
     )
     {
+        Objects.requireNonNull(prototypeClass, "prototypeClass must not be null");
+        Objects.requireNonNull(builder, "builder must not be null");
+
         PrototypeBuilder<?, ?> old = BUILDER_MAP.put(prototypeClass, builder);
 
         if (old != null)
-            log.warn(
+            LOGGER.warn(
                     Prototype.LOG_MARKER, "Added builder {} for prototype {}, replacing old builder {}",
                     builder.getClass(), prototypeClass, old.getClass()
             );
         else
-            log.trace(Prototype.LOG_MARKER, "Added builder {} for prototype {}", builder.getClass(), prototypeClass);
+            LOGGER.trace(Prototype.LOG_MARKER, "Added builder {} for prototype {}", builder.getClass(), prototypeClass);
     }
 
-    public static void putPrototype(@NonNull Prototype<?> prototype)
+    public static void putPrototype(Prototype<?> prototype)
     {
+        Objects.requireNonNull(prototype, "prototype must not be null");
         checkName(PROTOTYPE_NAME_PATTERN, prototype.getName());
 
         Prototype<?> old = PROTOTYPE_MAP.put(prototype.getName(), prototype);
 
         if (old != null)
-            log.warn(
+            LOGGER.warn(
                     Prototype.LOG_MARKER, "Added prototype '{}' to collection, replacing old value", prototype.getName()
             );
         else
-            log.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", prototype.getName());
+            LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", prototype.getName());
     }
 
-    public static <T,
-            P extends Prototype<T>> Optional<P> getPrototype(@NonNull Class<T> typeClass, @NonNull String name)
+    public static <T, P extends Prototype<T>> Optional<P> getPrototype(Class<T> typeClass, String name)
     {
+        Objects.requireNonNull(typeClass, "typeClass must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+
         Matcher matcher = checkName(PROTOTYPE_WITH_ARG_PATTERN, name);
         /* Discard parameters */
         name = matcher.group("name");
@@ -97,21 +104,27 @@ public final class PrototypeManager
     {
         Prototype<?> prototype = PROTOTYPE_MAP.get(name);
         if (prototype == null) {
-            log.trace(Prototype.LOG_MARKER, "No prototypes found for name {}", name, typeClass);
+            LOGGER.trace(Prototype.LOG_MARKER, "No prototypes found for name {}", name, typeClass);
             return Optional.empty();
         }
 
         return Optional.of((P) prototype);
     }
 
-    public static <T> T createType(@NonNull Class<T> typeClass, @NonNull String name)
+    public static <T> T createType(Class<T> typeClass, String name)
     {
+        Objects.requireNonNull(typeClass, "typeClass must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+
         return optionalCreateType(typeClass, name)
                 .orElseThrow(() -> new IllegalArgumentException(name + "/" + typeClass));
     }
 
-    public static <T> Optional<T> optionalCreateType(@NonNull Class<T> typeClass, @NonNull String name)
+    public static <T> Optional<T> optionalCreateType(Class<T> typeClass, String name)
     {
+        Objects.requireNonNull(typeClass, "typeClass must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+
         Matcher matcher = checkName(PROTOTYPE_WITH_ARG_PATTERN, name);
 
         Optional<Prototype<T>> prototype = getPrototype(typeClass, matcher.group("name"));
@@ -120,13 +133,15 @@ public final class PrototypeManager
         return Optional.of(createType(prototype.get(), matcher.group("arg")));
     }
 
-    public static <T, P extends Prototype<? extends T>> T createType(@NonNull P proto)
+    public static <T, P extends Prototype<? extends T>> T createType(P proto)
     {
         return createType(proto, null);
     }
 
-    public static <T, P extends Prototype<? extends T>> T createType(@NonNull P proto, String arg)
+    public static <T, P extends Prototype<? extends T>> T createType(P proto, String arg)
     {
+        Objects.requireNonNull(proto, "proto must not be null");
+
         PrototypeBuilder<T, P> builder = prototypeBuilder(proto.getClass());
         if (builder == null)
             throw new UnsupportedOperationException("no builder found for prototype " + proto);
@@ -135,10 +150,10 @@ public final class PrototypeManager
     }
 
     @SuppressWarnings("unchecked")
-    public static <T, P extends Prototype<? extends T>> PrototypeBuilder<T, P> prototypeBuilder(
-            @NonNull Class<? extends P> protoClass
-    )
+    public static <T,
+            P extends Prototype<? extends T>> PrototypeBuilder<T, P> prototypeBuilder(Class<? extends P> protoClass)
     {
+        Objects.requireNonNull(protoClass, "protoClass must not be null");
         if (BUILDER_MAP.containsKey(protoClass))
             return (PrototypeBuilder<T, P>) BUILDER_MAP.get(protoClass);
 
@@ -156,7 +171,7 @@ public final class PrototypeManager
                 return builder;
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
                     | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-                log.error("failed to instantiate default builder {} for prototype {}", builderClass, protoClass, e);
+                LOGGER.error("failed to instantiate default builder {} for prototype {}", builderClass, protoClass, e);
             }
         }
 
@@ -171,7 +186,7 @@ public final class PrototypeManager
         Class<? extends Prototype<?>>[] interfaces = Stream.of(protoClass.getInterfaces())
                 .filter(Prototype.class::isAssignableFrom).toArray(Class[]::new);
         if (interfaces.length != 1) {
-            log.atWarn().addKeyValue("interfaces", interfaces)
+            LOGGER.atWarn().addKeyValue("interfaces", interfaces)
                     .log("cannot use superinterface builder detection for prototype {}", protoClass);
             return null;
         }
@@ -182,14 +197,15 @@ public final class PrototypeManager
     {
         Matcher matcher = pattern.matcher(name);
         if (!matcher.matches()) {
-            log.error(Prototype.LOG_MARKER, "Prototype name {} does not match required pattern {}", name, pattern);
+            LOGGER.error(Prototype.LOG_MARKER, "Prototype name {} does not match required pattern {}", name, pattern);
             throw new IllegalArgumentException(name);
         }
         return matcher;
     }
 
-    public static void loadPrototypes(@NonNull Path path) throws IOException
+    public static void loadPrototypes(Path path) throws IOException
     {
-        SerializationManager.loadGameData(path, PrototypeManager::putPrototype);
+        SerializationManager
+                .loadGameData(Objects.requireNonNull(path, "path must not be null"), PrototypeManager::putPrototype);
     }
 }

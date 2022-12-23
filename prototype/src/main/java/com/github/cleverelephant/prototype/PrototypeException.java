@@ -23,11 +23,27 @@
  */
 package com.github.cleverelephant.prototype;
 
-import lombok.experimental.StandardException;
-
 @SuppressWarnings("javadoc")
-@StandardException
 public class PrototypeException extends RuntimeException
 {
+
+    public PrototypeException()
+    {
+    }
+
+    public PrototypeException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public PrototypeException(String message)
+    {
+        super(message);
+    }
+
+    public PrototypeException(Throwable cause)
+    {
+        super(cause);
+    }
 
 }

@@ -30,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -37,19 +38,18 @@ import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
-
 @SuppressWarnings("javadoc")
-@Slf4j
 public final class SerializationManager
 {
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public static final Marker LOG_MARKER = MarkerFactory.getMarker("io");
     private static final Path APPLICATION_ROOT = Path.of(".").toAbsolutePath().normalize();
+    private static final Logger LOGGER = LoggerFactory.getLogger(SerializationManager.class);
 
     static {
         OBJECT_MAPPER.registerModule(new MrBeanModule());
@@ -60,8 +60,11 @@ public final class SerializationManager
         throw new UnsupportedOperationException();
     }
 
-    public static void loadGameData(@NonNull Path path, @NonNull Consumer<Prototype<?>> consumer) throws IOException
+    public static void loadGameData(Path path, Consumer<Prototype<?>> consumer) throws IOException
     {
+        Objects.requireNonNull(path, "path must not be null");
+        Objects.requireNonNull(consumer, "consumer must not be null");
+
         if (Files.isDirectory(path))
             loadGameDataFromDirectory(path, consumer);
         else if (Files.isRegularFile(path))
@@ -71,8 +74,7 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
-    private static void loadGameDataFromDirectory(@NonNull Path path, @NonNull Consumer<Prototype<?>> consumer)
-            throws IOException
+    private static void loadGameDataFromDirectory(Path path, Consumer<Prototype<?>> consumer) throws IOException
     {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
 
@@ -85,23 +87,21 @@ public final class SerializationManager
         });
     }
 
-    private static void loadGameDataFromFile(
-            @NonNull Path path, @NonNull Path relativePath, @NonNull Consumer<Prototype<?>> consumer
-    ) throws IOException
+    private static void loadGameDataFromFile(Path path, Path relativePath, Consumer<Prototype<?>> consumer)
+            throws IOException
     {
         try {
-            log.atDebug().addMarker(LOG_MARKER).log("loading game data from path {}", compressLoggingPath(path));
+            LOGGER.atDebug().addMarker(LOG_MARKER).log("loading game data from path {}", compressLoggingPath(path));
             Prototype<?> prototype = deserializePrototype(path, relativePath, new TypeReference<Prototype<?>>() {});
             consumer.accept(prototype);
         } catch (IOException e) {
-            log.atError().addMarker(LOG_MARKER).setCause(e).log("failed to load game data from path {}", path);
+            LOGGER.atError().addMarker(LOG_MARKER).setCause(e).log("failed to load game data from path {}", path);
             throw new IOException("failed to load game data", e);
         }
     }
 
-    private static <T extends Prototype<?>> T deserializePrototype(
-            @NonNull Path path, @NonNull Path relativePath, @NonNull TypeReference<T> clazz
-    ) throws IOException
+    private static <T extends Prototype<?>> T deserializePrototype(Path path, Path relativePath, TypeReference<T> clazz)
+            throws IOException
     {
         try (InputStream in = Files.newInputStream(path)) {
             String prototypeName = prototypeNameFromPath(relativePath);
