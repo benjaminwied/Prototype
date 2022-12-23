@@ -1,0 +1,10 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "dayly"
+  - package-ecosystem: "gradle"
+    directory: "/prototype"
+    schedule:
+      interval: "dayly"
