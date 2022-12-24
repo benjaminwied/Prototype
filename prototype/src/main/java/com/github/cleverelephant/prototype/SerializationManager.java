@@ -23,6 +23,8 @@
  */
 package com.github.cleverelephant.prototype;
 
+import com.github.cleverelephant.prototype.materialization.PrototypeMaterializationModule;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -36,7 +38,6 @@ import java.util.function.Consumer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.mrbean.MrBeanModule;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,8 @@ public final class SerializationManager
     private static final Logger LOGGER = LoggerFactory.getLogger(SerializationManager.class);
 
     static {
-        OBJECT_MAPPER.registerModule(new MrBeanModule());
+        //        OBJECT_MAPPER.registerModule(new MrBeanModule());
+        OBJECT_MAPPER.registerModule(new PrototypeMaterializationModule());
     }
 
     private SerializationManager()
@@ -87,9 +89,19 @@ public final class SerializationManager
         });
     }
 
+    private static boolean isFileValid(Path path)
+    {
+        return path.getFileName().toString().endsWith(".json");
+    }
+
     private static void loadGameDataFromFile(Path path, Path relativePath, Consumer<Prototype<?>> consumer)
             throws IOException
     {
+        if (!isFileValid(path)) {
+            LOGGER.atWarn().addMarker(LOG_MARKER).log("skipping invalid file {}", compressLoggingPath(path));
+            return;
+        }
+
         try {
             LOGGER.atDebug().addMarker(LOG_MARKER).log("loading game data from path {}", compressLoggingPath(path));
             Prototype<?> prototype = deserializePrototype(path, relativePath, new TypeReference<Prototype<?>>() {});

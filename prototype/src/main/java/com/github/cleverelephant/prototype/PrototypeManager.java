@@ -75,16 +75,16 @@ public final class PrototypeManager
     public static void putPrototype(Prototype<?> prototype)
     {
         Objects.requireNonNull(prototype, "prototype must not be null");
-        checkName(PROTOTYPE_NAME_PATTERN, prototype.getName());
+        checkName(PROTOTYPE_NAME_PATTERN, prototype.name());
 
-        Prototype<?> old = PROTOTYPE_MAP.put(prototype.getName(), prototype);
+        Prototype<?> old = PROTOTYPE_MAP.put(prototype.name(), prototype);
 
         if (old != null)
             LOGGER.warn(
-                    Prototype.LOG_MARKER, "Added prototype '{}' to collection, replacing old value", prototype.getName()
+                    Prototype.LOG_MARKER, "Added prototype '{}' to collection, replacing old value", prototype.name()
             );
         else
-            LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", prototype.getName());
+            LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", prototype.name());
     }
 
     public static <T, P extends Prototype<T>> Optional<P> getPrototype(Class<T> typeClass, String name)

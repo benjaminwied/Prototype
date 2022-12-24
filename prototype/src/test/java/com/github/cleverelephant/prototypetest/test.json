@@ -1,0 +1,6 @@
+{
+  "$prototypeClass" : "com.github.cleverelephant.prototypetest.TestPrototype",
+  "a" : "a",
+  "b" : 1,
+  "c" : true
+}

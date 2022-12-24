@@ -39,5 +39,5 @@ public interface Prototype<T>
     Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
 
     @JacksonInject(useInput = OptBoolean.FALSE, value = "name")
-    String getName();
+    String name();
 }
