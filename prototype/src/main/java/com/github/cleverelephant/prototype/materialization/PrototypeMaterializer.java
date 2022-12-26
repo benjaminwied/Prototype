@@ -13,8 +13,13 @@ import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.JavaType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PrototypeMaterializer extends AbstractTypeResolver
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeMaterializer.class);
+
     private final Map<Class<?>, Class<?>> generatedClasses;
     private MyClassLoader classLoader;
 
@@ -35,12 +40,17 @@ public class PrototypeMaterializer extends AbstractTypeResolver
 
     private Class<?> getMaterializedPrototype(JavaType type)
     {
-        if (generatedClasses.containsKey(type.getRawClass()))
-            return generatedClasses.get(type.getRawClass());
+        try {
+            if (generatedClasses.containsKey(type.getRawClass()))
+                return generatedClasses.get(type.getRawClass());
 
-        Class<?> materialized = materializePrototype(type);
-        generatedClasses.put(type.getRawClass(), materialized);
-        return materialized;
+            Class<?> materialized = materializePrototype(type);
+            generatedClasses.put(type.getRawClass(), materialized);
+            return materialized;
+        } catch (Exception e) {
+            LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", type, e);
+            throw new UnsupportedOperationException(e);
+        }
     }
 
     private Class<?> materializePrototype(JavaType type)
