@@ -81,8 +81,13 @@ public class ByteCodeGenerator
                     INVOKESPECIAL, internalSuperClassName, "<init>", Util.methodDescriptor(void.class), false
             );
 
-            for (int i = 0; i < names.length; i++)
-                generator.paramToField(names[i], i);
+            for (int fi = 0, pi = 0; fi < names.length; fi++, pi++) {
+                generator.paramToField(names[fi], fi, pi);
+
+                /* If parameter[i] takes two words of memory (long, double), must increment pi */
+                if (types[fi].equals(double.class) || types[fi].equals(long.class))
+                    pi++;
+            }
             generator.returnVoid();
         });
     }

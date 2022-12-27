@@ -52,8 +52,13 @@ public class InstructionGenerator
 
     public void loadParam(int index)
     {
+        loadParam(index, index);
+    }
+
+    public void loadParam(int index, int localVariableIndex)
+    {
         String typeDescriptor = paramTypes[index].descriptorString();
-        visitor.visitVarInsn(Util.loadOpcode(typeDescriptor), index + 1);
+        visitor.visitVarInsn(Util.loadOpcode(typeDescriptor), localVariableIndex + 1);
     }
 
     public void loadField(String fieldName, Class<?> fieldType)
@@ -62,13 +67,18 @@ public class InstructionGenerator
         visitor.visitFieldInsn(GETFIELD, internalClassName, fieldName, fieldType.descriptorString());
     }
 
-    public void paramToField(String fieldName, int paramIndex)
+    public void paramToField(String fieldName, int paramIndex, int localVariableIndex)
     {
         String typeDescriptor = paramTypes[paramIndex].descriptorString();
 
         loadSelf();
-        loadParam(paramIndex);
+        loadParam(paramIndex, localVariableIndex);
         visitor.visitFieldInsn(PUTFIELD, internalClassName, fieldName, typeDescriptor);
+    }
+
+    public void paramToField(String fieldName, int paramIndex)
+    {
+        paramToField(fieldName, paramIndex, paramIndex);
     }
 
     public MethodVisitor visitor()

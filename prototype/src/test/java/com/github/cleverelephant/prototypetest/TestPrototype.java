@@ -9,6 +9,7 @@ public interface TestPrototype extends Prototype<String>
     boolean c();
     String d();
     String[] array();
+    double doubleValue();
 
     default String $d()
     {

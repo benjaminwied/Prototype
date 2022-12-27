@@ -3,6 +3,7 @@ package com.github.cleverelephant.prototype.materialization;
 import com.github.cleverelephant.prototype.Prototype;
 
 import java.lang.reflect.Method;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -76,6 +77,7 @@ public class PrototypeMaterializer extends AbstractTypeResolver
             methods.add(method);
         }
 
+        methods.sort(Comparator.comparing(Method::getName));
         return methods;
     }
 
