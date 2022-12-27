@@ -7,4 +7,10 @@ public interface TestPrototype extends Prototype<String>
     String a();
     int b();
     boolean c();
+    String d();
+
+    default String $d()
+    {
+        return "abc";
+    }
 }

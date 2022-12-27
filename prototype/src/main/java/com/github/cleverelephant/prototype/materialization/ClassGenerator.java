@@ -7,8 +7,53 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+
 public class ClassGenerator
 {
+    private final class SetterAnnotations implements MethodAnnotationSupplier
+    {
+        private final int index;
+        private MethodAnnotationSupplier parent;
+
+        private SetterAnnotations(int index)
+        {
+            this.index = index;
+            parent = MethodAnnotationSupplier.annotateMethod(methods[index].getAnnotations());
+        }
+
+        @Override
+        public MyAnnotation[] forParameter(String methodName, int paramIndex, Class<?> paramTypes)
+        {
+            return new MyAnnotation[0];
+        }
+
+        @Override
+        public MyAnnotation[] forMethod(String methodName, Class<?> returnType, Class<?>... paramTypes)
+        {
+            Set<MyAnnotation> annotations = new HashSet<>(
+                    Arrays.asList(parent.forMethod(methodName, returnType, paramTypes))
+            );
+
+            if (annotations.stream().noneMatch(JsonProperty.class::isInstance))
+                annotations.add(new MyAnnotation(JsonProperty.class).addMapping("value", names[index]));
+            else {
+                MyAnnotation a = annotations.stream().filter(JsonProperty.class::isInstance).findFirst().orElseThrow();
+
+                if (a.isDefaulMapping("value")) {
+                    MyAnnotation annotation = new MyAnnotation(a);
+                    annotation.addMapping("value", names[index]);
+
+                    annotations.remove(a);
+                    annotations.add(annotation);
+                }
+            }
+
+            return annotations.toArray(MyAnnotation[]::new);
+        }
+    }
+
     private final String className;
     private final String superClassName;
 
@@ -38,45 +83,34 @@ public class ClassGenerator
         );
 
         for (int i = 0; i < names.length; i++) {
-            byteCodeGenerator.addField(names[i], types[i]);
-            byteCodeGenerator.addGetter(names[i], names[i], types[i]);
-
             final int index = i;
-            byteCodeGenerator.addSetter(names[i], names[i], types[i], new MethodAnnotationSupplier() {
-                private MethodAnnotationSupplier parent = MethodAnnotationSupplier
-                        .annotateMethod(methods[index].getAnnotations());
 
-                @Override
-                public MyAnnotation[] forParameter(String methodName, int paramIndex, Class<?> paramTypes)
-                {
-                    return new MyAnnotation[0];
-                }
+            byteCodeGenerator.addField(names[i], types[i]);
+            byteCodeGenerator.addField("$" + names[i], boolean.class);
 
-                @Override
-                public MyAnnotation[] forMethod(String methodName, Class<?> returnType, Class<?>... paramTypes)
-                {
-                    Set<MyAnnotation> annotations = new HashSet<>(
-                            Arrays.asList(parent.forMethod(methodName, returnType, paramTypes))
-                    );
+            byteCodeGenerator.addMethod(names[i], types[i], new Class<?>[0], generator -> {
+                generator.loadField("$" + names[index], boolean.class);
+                Label label = new Label();
+                generator.visitor().visitJumpInsn(Opcodes.IFEQ, label);
 
-                    if (annotations.stream().noneMatch(JsonProperty.class::isInstance))
-                        annotations.add(new MyAnnotation(JsonProperty.class).addMapping("value", names[index]));
-                    else {
-                        MyAnnotation a = annotations.stream().filter(JsonProperty.class::isInstance).findFirst()
-                                .orElseThrow();
+                generator.loadField(names[index], types[index]);
+                generator.returnType(types[index]);
 
-                        if (a.isDefaulMapping("value")) {
-                            MyAnnotation annotation = new MyAnnotation(a);
-                            annotation.addMapping("value", names[index]);
+                generator.visitor().visitLabel(label);
+                generator.visitor().visitFrame(Opcodes.F_SAME, 0, new Object[0], 0, new Object[0]);
+                generator.invokeOwnMethod("$" + names[index], types[index]);
+                //                generator.invokeVirtual("$" + names[index], types[index]);
+                generator.returnType(types[index]);
 
-                            annotations.remove(a);
-                            annotations.add(annotation);
-                        }
-                    }
-
-                    return annotations.toArray(MyAnnotation[]::new);
-                }
             });
+
+            byteCodeGenerator.addMethod(
+                    names[i], void.class, new Class<?>[] { types[i] }, new SetterAnnotations(index), generator -> {
+                        generator.paramToField(names[index], 0);
+                        generator.setFieldToConst("$" + names[index], boolean.class, true);
+                        generator.returnVoid();
+                    }
+            );
         }
 
         byteCodeGenerator.addDefaultConstructor();

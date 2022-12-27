@@ -1,13 +1,17 @@
 package com.github.cleverelephant.prototype.materialization;
 
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 
-import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
+import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
+import static org.objectweb.asm.Opcodes.V1_8;
 
 public class ByteCodeGenerator
 {
@@ -71,48 +75,16 @@ public class ByteCodeGenerator
 
     public void addConstructor(String[] names, Class<?>[] types, MethodAnnotationSupplier annotationSupplier)
     {
-        MethodVisitor visitor = classWriter
-                .visitMethod(ACC_PUBLIC, "<init>", methodDescriptor(void.class, types), null, null);
+        addMethod("<init>", void.class, types, annotationSupplier, generator -> {
+            generator.loadSelf();
+            generator.visitor().visitMethodInsn(
+                    INVOKESPECIAL, internalSuperClassName, "<init>", Util.methodDescriptor(void.class), false
+            );
 
-        for (MyAnnotation annotation : annotationSupplier.forMethod("<init>", void.class))
-            addAnnotation(visitor.visitAnnotation(annotation.getAnnotationType().descriptorString(), true), annotation);
-        for (int i = 0; i < names.length; i++)
-            for (MyAnnotation annotation : annotationSupplier.forParameter("<init>", i, types[i]))
-                addAnnotation(
-                        visitor.visitParameterAnnotation(0, annotation.getAnnotationType().descriptorString(), true),
-                        annotation
-                );
-
-        // TODO
-        //        for (int i = 0; i < names.length; i++) {
-        //            visitor.visitParameter(names[i], 0);
-        //            addPropertyAnnotation(visitor, i, names[i]);
-        //
-        //            final int idx = i;
-        //            copyAnnotations(methods[i], desc -> visitor.visitParameterAnnotation(idx, desc, true));
-        //        }
-
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitMethodInsn(INVOKESPECIAL, internalSuperClassName, "<init>", methodDescriptor(void.class), false);
-
-        for (int i = 0; i < names.length; i++) {
-            visitor.visitVarInsn(ALOAD, 0);
-            visitor.visitVarInsn(loadOpcode(types[i].descriptorString()), i + 1);
-            visitor.visitFieldInsn(PUTFIELD, internalClassName, names[i], types[i].descriptorString());
-        }
-
-        visitor.visitInsn(RETURN);
-        visitor.visitMaxs(0, 0);
-        visitor.visitEnd();
-    }
-
-    private static String methodDescriptor(Class<?> returnType, Class<?>... paramTypes)
-    {
-        StringBuilder methodDescriptor = new StringBuilder("(");
-        for (Class<?> type : paramTypes)
-            methodDescriptor.append(type.descriptorString());
-        methodDescriptor.append(")").append(returnType.descriptorString());
-        return methodDescriptor.toString();
+            for (int i = 0; i < names.length; i++)
+                generator.paramToField(names[i], i);
+            generator.returnVoid();
+        });
     }
 
     public void addField(String name, Class<?> type)
@@ -129,6 +101,36 @@ public class ByteCodeGenerator
         visitor.visitEnd();
     }
 
+    public void addMethod(
+            String methodName, Class<?> returnType, Class<?>[] paramTypes, Consumer<InstructionGenerator> generator
+    )
+    {
+        addMethod(methodName, returnType, paramTypes, MethodAnnotationSupplier.NO_ANNOTATIONS, generator);
+    }
+
+    public void addMethod(
+            String methodName, Class<?> returnType, Class<?>[] paramTypes, MethodAnnotationSupplier annotationSupplier,
+            Consumer<InstructionGenerator> generator
+    )
+    {
+        MethodVisitor visitor = classWriter
+                .visitMethod(ACC_PUBLIC, methodName, Util.methodDescriptor(returnType, paramTypes), null, null);
+
+        for (MyAnnotation annotation : annotationSupplier.forMethod(methodName, void.class))
+            addAnnotation(visitor.visitAnnotation(annotation.getAnnotationType().descriptorString(), true), annotation);
+        for (int i = 0; i < paramTypes.length; i++)
+            for (MyAnnotation annotation : annotationSupplier.forParameter(methodName, i, paramTypes[i]))
+                addAnnotation(
+                        visitor.visitParameterAnnotation(0, annotation.getAnnotationType().descriptorString(), true),
+                        annotation
+                );
+
+        generator.accept(new InstructionGenerator(visitor, internalClassName, returnType, paramTypes));
+
+        visitor.visitMaxs(0, 0);
+        visitor.visitEnd();
+    }
+
     public void addGetter(String methodName, String fieldName, Class<?> type)
     {
         addGetter(methodName, fieldName, type, MethodAnnotationSupplier.NO_ANNOTATIONS);
@@ -138,19 +140,10 @@ public class ByteCodeGenerator
             String methodName, String fieldName, Class<?> type, MethodAnnotationSupplier annotationSupplier
     )
     {
-        String typeDescriptor = type.descriptorString();
-
-        MethodVisitor visitor = classWriter.visitMethod(ACC_PUBLIC, methodName, "()" + typeDescriptor, null, null);
-
-        for (MyAnnotation annotation : annotationSupplier.forMethod(methodName, type))
-            addAnnotation(visitor.visitAnnotation(annotation.getAnnotationType().descriptorString(), true), annotation);
-
-        // TODO: copyAnnotations(method, desc -> visitor.visitAnnotation(desc, true));
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitFieldInsn(GETFIELD, internalClassName, fieldName, typeDescriptor);
-        visitor.visitInsn(returnOpcode(typeDescriptor));
-        visitor.visitMaxs(0, 0);
-        visitor.visitEnd();
+        addMethod(methodName, type, new Class<?>[0], annotationSupplier, generator -> {
+            generator.loadField(fieldName, type);
+            generator.returnType(type);
+        });
     }
 
     public void addSetter(String methodName, String fieldName, Class<?> type)
@@ -162,26 +155,10 @@ public class ByteCodeGenerator
             String methodName, String fieldName, Class<?> type, MethodAnnotationSupplier annotationSupplier
     )
     {
-        String typeDescriptor = type.descriptorString();
-
-        MethodVisitor visitor = classWriter
-                .visitMethod(ACC_PUBLIC, methodName, "(" + typeDescriptor + ")V", null, null);
-
-        for (MyAnnotation annotation : annotationSupplier.forMethod(methodName, type))
-            addAnnotation(visitor.visitAnnotation(annotation.getAnnotationType().descriptorString(), true), annotation);
-        for (MyAnnotation annotation : annotationSupplier.forParameter(methodName, 0, type))
-            addAnnotation(
-                    visitor.visitParameterAnnotation(0, annotation.getAnnotationType().descriptorString(), true),
-                    annotation
-            );
-
-        visitor.visitVarInsn(ALOAD, 0);
-        visitor.visitVarInsn(loadOpcode(typeDescriptor), 1);
-        visitor.visitFieldInsn(PUTFIELD, internalClassName, fieldName, typeDescriptor);
-
-        visitor.visitInsn(RETURN);
-        visitor.visitMaxs(0, 0);
-        visitor.visitEnd();
+        addMethod(methodName, void.class, new Class<?>[] { type }, annotationSupplier, generator -> {
+            generator.paramToField(fieldName, 0);
+            generator.returnVoid();
+        });
     }
 
     public byte[] generate()
@@ -193,35 +170,5 @@ public class ByteCodeGenerator
     private static String internalName(String name)
     {
         return name.replace('.', '/');
-    }
-
-    private static int returnOpcode(String descriptor)
-    {
-        return switch (descriptor) {
-            case "Z", "B", "C", "S", "I" -> IRETURN;
-            case "F" -> FRETURN;
-            case "D" -> DRETURN;
-            case "J" -> LRETURN;
-            default -> {
-                if (!descriptor.startsWith("L"))
-                    throw new IllegalArgumentException("invalid descriptor " + descriptor);
-                yield ARETURN;
-            }
-        };
-    }
-
-    private static int loadOpcode(String descriptor)
-    {
-        return switch (descriptor) {
-            case "Z", "B", "C", "S", "I" -> ILOAD;
-            case "F" -> FLOAD;
-            case "D" -> DLOAD;
-            case "J" -> LLOAD;
-            default -> {
-                if (!descriptor.startsWith("L"))
-                    throw new IllegalArgumentException("invalid descriptor " + descriptor);
-                yield ALOAD;
-            }
-        };
     }
 }

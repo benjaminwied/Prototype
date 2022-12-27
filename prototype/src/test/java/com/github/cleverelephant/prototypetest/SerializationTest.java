@@ -47,7 +47,7 @@ class SerializationTest
         assertAll(
                 () -> assertEquals("test", proto.name(), "wrong name"),
                 () -> assertEquals("a", proto.a(), "wrong data"), () -> assertEquals(1, proto.b(), "wrong data"),
-                () -> assertTrue(proto.c(), "wrong data")
+                () -> assertTrue(proto.c(), "wrong data"), () -> assertEquals("abc", proto.d(), "wrong data")
         );
     }
 

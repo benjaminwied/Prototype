@@ -70,7 +70,7 @@ public class PrototypeMaterializer extends AbstractTypeResolver
         List<Method> methods = new LinkedList<>();
 
         for (Method method : clazz.getMethods()) {
-            if (method.isBridge() || method.isSynthetic() || method.getParameterCount() != 0)
+            if (method.isBridge() || method.isSynthetic() || method.isDefault() || method.getParameterCount() != 0)
                 continue;
 
             methods.add(method);
