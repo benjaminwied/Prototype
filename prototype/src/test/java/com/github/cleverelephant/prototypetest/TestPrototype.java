@@ -8,6 +8,7 @@ public interface TestPrototype extends Prototype<String>
     int b();
     boolean c();
     String d();
+    String[] array();
 
     default String $d()
     {

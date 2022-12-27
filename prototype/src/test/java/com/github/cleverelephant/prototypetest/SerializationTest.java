@@ -13,10 +13,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class SerializationTest
 {
@@ -47,7 +44,8 @@ class SerializationTest
         assertAll(
                 () -> assertEquals("test", proto.name(), "wrong name"),
                 () -> assertEquals("a", proto.a(), "wrong data"), () -> assertEquals(1, proto.b(), "wrong data"),
-                () -> assertTrue(proto.c(), "wrong data"), () -> assertEquals("abc", proto.d(), "wrong data")
+                () -> assertTrue(proto.c(), "wrong data"), () -> assertEquals("abc", proto.d(), "wrong data"),
+                () -> assertArrayEquals(new String[] { "first", "second" }, proto.array(), "wrong data")
         );
     }
 

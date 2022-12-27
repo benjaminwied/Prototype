@@ -17,7 +17,7 @@ public class Util
             case "D" -> DLOAD;
             case "J" -> LLOAD;
             default -> {
-                if (!descriptor.startsWith("L"))
+                if (!descriptor.startsWith("L") && !descriptor.startsWith("["))
                     throw new IllegalArgumentException("invalid descriptor " + descriptor);
                 yield ALOAD;
             }
@@ -32,7 +32,7 @@ public class Util
             case "D" -> DRETURN;
             case "J" -> LRETURN;
             default -> {
-                if (!descriptor.startsWith("L"))
+                if (!descriptor.startsWith("L") && !descriptor.startsWith("["))
                     throw new IllegalArgumentException("invalid descriptor " + descriptor);
                 yield ARETURN;
             }
