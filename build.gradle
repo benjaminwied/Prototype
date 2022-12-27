@@ -36,11 +36,17 @@ allprojects {
             email = "88872078+CleverElephant@users.noreply.github.com"
         }
     }
+    
+    task sourceJar(type: Jar) {
+        from sourceSets.main.allJava
+        archiveClassifier = "sources"
+    }
 
     publishing {
         publications {
             prototype(MavenPublication) {
                 from components.java
+                artifact sourceJar
             }
         }
     
