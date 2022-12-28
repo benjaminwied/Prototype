@@ -29,6 +29,7 @@ allprojects {
     
     license {
         header = rootProject.file("gradle/header.txt")
+        exclude "**/*.json"
         
         ext {
             year = Calendar.getInstance().get(Calendar.YEAR)
@@ -54,8 +55,4 @@ allprojects {
             mavenLocal()
         }
     }
-    
-    //compileJava.options.failOnError = false
-    
-
 }
