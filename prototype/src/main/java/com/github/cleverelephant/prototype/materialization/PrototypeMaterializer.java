@@ -1,6 +1,7 @@
 package com.github.cleverelephant.prototype.materialization;
 
 import com.github.cleverelephant.prototype.Prototype;
+import com.github.cleverelephant.prototype.PrototypeException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -49,7 +50,7 @@ public class PrototypeMaterializer extends AbstractTypeResolver
             return materialized;
         } catch (Exception e) {
             LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", prototype, e);
-            throw new UnsupportedOperationException(e);
+            throw new PrototypeException(e);
         }
     }
 
