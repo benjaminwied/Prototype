@@ -5,17 +5,17 @@ Prototype is a library for defining and loading prototypes from json files.
 ## Add to your dependencies
 
 Gradle:
-
-    implementation "com.github.cleverelephant.prototype:prototype:LATEST"
-    
+```gradle
+implementation "com.github.cleverelephant.prototype:prototype:LATEST"
+```
 Maven:
-
-    <dependency>
-      <groupId>com.github.cleverelephant.prototype</groupId>
-      <artifactId>prototype</artifactId>
-      <version>LATEST</version>
-    </dependency>
-    
+```xml
+<dependency>
+  <groupId>com.github.cleverelephant.prototype</groupId>
+  <artifactId>prototype</artifactId>
+  <version>LATEST</version>
+</dependency>
+```
 ## Usage
 
 1. Define your prototype
