@@ -30,10 +30,24 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
+/**
+ * Annotation that may be used on a Prototype definition to specify the builder to use. This annotation is overridden by
+ * invocations of {@link PrototypeManager#registerBuilder(Class, PrototypeBuilder)}.
+ *
+ * @author Benjamin Wied
+ *
+ * @see    Prototype
+ */
 @Documented
 @Retention(RUNTIME)
 @Target(TYPE)
 public @interface DefaultProtoBuilder
 {
+    /**
+     * Defines the builder class to use. It must provide a public, no-args constructor. If more configuration is needed,
+     * use {@link PrototypeManager#registerBuilder(Class, PrototypeBuilder)} instead.
+     *
+     * @return the builder class to use (not null)
+     */
     Class<? extends PrototypeBuilder<?, ?>> value();
 }

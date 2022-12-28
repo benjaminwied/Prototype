@@ -23,7 +23,33 @@
  */
 package com.github.cleverelephant.prototype;
 
+/**
+ * A PrototypeBuilder builds prototypes. Register it via
+ * {@link PrototypeManager#registerBuilder(Class, PrototypeBuilder)} or using the {@link DefaultProtoBuilder} annotation
+ * on a prototype class. PrototypeBuilders must be <em>immutable</em> and <em>stateless</em>.
+ *
+ * @author     Benjamin Wied
+ *
+ * @param  <T>
+ *             type to build
+ * @param  <P>
+ *             prototype to build from
+ */
 public interface PrototypeBuilder<T, P extends Prototype<? extends T>>
 {
+    /**
+     * Builds a prototype using an argument (optional). If the {@code arg} parameter is not needed, it must be ignored,
+     * otherwise, an exception may be thrown if the argument is invalid (such as {@code null}).
+     *
+     * @param  proto
+     *                              to build
+     * @param  arg
+     *                              optional argument
+     *
+     * @return                      the type built
+     *
+     * @throws NullPointerException
+     *                              if proto is null
+     */
     T build(P proto, String arg);
 }

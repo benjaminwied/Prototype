@@ -1,5 +1,29 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2022 Benjamin Wied
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package com.github.cleverelephant.prototype.materialization;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,6 +37,13 @@ import org.objectweb.asm.Opcodes;
 
 import static org.objectweb.asm.Opcodes.*;
 
+/**
+ * A class visitor that generates a concrete Prototype implementation while visiting the Prototype interface. Classes
+ * are generated in package {@code com.github.cleverelephant.prototyp.materialization.generated} with the same name as
+ * the implemented Prototype.
+ *
+ * @author Benjamin Wied
+ */
 public class MaterializingClassVisitor extends ClassVisitor
 {
     private static final String CLASS_CONSTRUCTOR_NAME = "<clinit>";
@@ -22,10 +53,19 @@ public class MaterializingClassVisitor extends ClassVisitor
     private final Consumer<Class<?>> classMaterializer;
     private String className;
 
+    /**
+     * Constructs a new MaterializingClassVisitor.
+     *
+     * @param  classMaterializer
+     *                              to materialize super-prototypes (if any)
+     *
+     * @throws NullPointerException
+     *                              if classMaterializer is null
+     */
     public MaterializingClassVisitor(Consumer<Class<?>> classMaterializer)
     {
         super(ASM9);
-        this.classMaterializer = classMaterializer;
+        this.classMaterializer = Objects.requireNonNull(classMaterializer, "classMaterializer must not be null");
         classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     }
 
@@ -90,16 +130,14 @@ public class MaterializingClassVisitor extends ClassVisitor
         return generateSetter(name, fieldDescriptor, fieldSignature);
     }
 
-    public MethodVisitor generateSetter(String name, String fieldDescriptor, String fieldSignature)
+    private MethodVisitor generateSetter(String name, String fieldDescriptor, String fieldSignature)
     {
-        return new MethodVisitor(api) {
-            private MethodVisitor setter;
-            private boolean hasJsonPropertyAnnotation;
+        String methodSignature = fieldSignature != null ? "(" + fieldSignature + ")V" : null;
+        MethodVisitor setter = classWriter
+                .visitMethod(ACC_PUBLIC, name, "(" + fieldDescriptor + ")V", methodSignature, null);
 
-            {
-                String methodSignature = fieldSignature != null ? "(" + fieldSignature + ")V" : null;
-                setter = classWriter.visitMethod(ACC_PUBLIC, name, "(" + fieldDescriptor + ")V", methodSignature, null);
-            }
+        return new MethodVisitor(api) {
+            private boolean hasJsonPropertyAnnotation;
 
             @Override
             public AnnotationVisitor visitAnnotation(String descriptor, boolean visible)
@@ -140,7 +178,7 @@ public class MaterializingClassVisitor extends ClassVisitor
         };
     }
 
-    public void generateGetter(String name, String fieldDescriptor, String fieldSignature)
+    private void generateGetter(String name, String fieldDescriptor, String fieldSignature)
     {
         String methodSignature = fieldSignature != null ? "()" + fieldSignature : null;
         MethodVisitor getter = classWriter.visitMethod(ACC_PUBLIC, name, "()" + fieldDescriptor, methodSignature, null);
@@ -178,19 +216,16 @@ public class MaterializingClassVisitor extends ClassVisitor
         classWriter.visitEnd();
     }
 
+    /**
+     * Converts the generated class to a byte array.
+     *
+     * @return the class data
+     *
+     * @see    ClassWriter#toByteArray()
+     */
     public byte[] toByteArray()
     {
         return classWriter.toByteArray();
-    }
-
-    public String getClassName()
-    {
-        return className;
-    }
-
-    public void setClassName(String internalClassName)
-    {
-        className = internalClassName;
     }
 
 }

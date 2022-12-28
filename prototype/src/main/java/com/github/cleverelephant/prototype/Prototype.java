@@ -32,12 +32,34 @@ import com.fasterxml.jackson.annotation.OptBoolean;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-@SuppressWarnings("javadoc")
+/**
+ * Defines a prototype, which can later be build into a concrete type. Methods define properties.
+ *
+ * @author     Benjamin Wied
+ *
+ * @param  <T>
+ *             type which is represented by this Prototype
+ *
+ * @see        PrototypeBuilder
+ * @see        PrototypeManager
+ */
 @JsonTypeInfo(use = Id.CLASS, include = As.PROPERTY, property = "$prototypeClass")
 public interface Prototype<T>
 {
+    /**
+     * Public LOG_MARKER that is used to log events.
+     */
     Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
 
+    /**
+     * This is the identifier of this prototype. A prototype can be obtained by using its name in
+     * {@link PrototypeManager#getPrototype(String)}.<br>
+     * <br>
+     * The name is computed from the path the prototype is loaded from, relative to the prototype root directory and
+     * without any file extension.
+     *
+     * @return the name of this prototype
+     */
     @JacksonInject(useInput = OptBoolean.FALSE, value = "name")
     String name();
 }

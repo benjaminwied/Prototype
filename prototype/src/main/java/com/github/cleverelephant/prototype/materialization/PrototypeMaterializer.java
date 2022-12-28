@@ -1,3 +1,26 @@
+/**
+ * MIT License
+ *
+ * Copyright (c) 2022 Benjamin Wied
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package com.github.cleverelephant.prototype.materialization;
 
 import com.github.cleverelephant.prototype.Prototype;
@@ -17,6 +40,13 @@ import org.objectweb.asm.ClassReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * An {@code AbstractTypeResolver} that resolves Prototypes using byte code generation.
+ *
+ * @author Benjamin Wied
+ *
+ * @see    MaterializingClassVisitor
+ */
 public class PrototypeMaterializer extends AbstractTypeResolver
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeMaterializer.class);
@@ -24,6 +54,9 @@ public class PrototypeMaterializer extends AbstractTypeResolver
     private final Map<Class<?>, Class<?>> generatedClasses;
     private MyClassLoader classLoader;
 
+    /**
+     * Constructs a new PrototypeMaterializer.
+     */
     public PrototypeMaterializer()
     {
         generatedClasses = new HashMap<>();
@@ -52,7 +85,7 @@ public class PrototypeMaterializer extends AbstractTypeResolver
                 Class<?> materialized = materializePrototype(prototype.getName());
                 generatedClasses.put(prototype, materialized);
                 return materialized;
-            } catch (Exception e) {
+            } catch (RuntimeException | IOException e) {
                 LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", prototype, e);
                 throw new PrototypeException(e);
             }

@@ -23,24 +23,51 @@
  */
 package com.github.cleverelephant.prototype;
 
-@SuppressWarnings("javadoc")
+/**
+ * Exception thrown by most prototype related-methods.
+ *
+ * @author Benjamin Wied
+ */
 public class PrototypeException extends RuntimeException
 {
 
+    /**
+     * Constructs a new {@code PrototypeException} with no detail message and cause.
+     */
     public PrototypeException()
     {
     }
 
+    /**
+     * Constructs a new {@code PrototypeException} with the given detail message and cause.
+     *
+     * @param message
+     *                detail message
+     * @param cause
+     *                exception cause
+     */
     public PrototypeException(String message, Throwable cause)
     {
         super(message, cause);
     }
 
+    /**
+     * Constructs a new {@code PrototypeException} with the given detail message and no cause.
+     *
+     * @param message
+     *                detail message
+     */
     public PrototypeException(String message)
     {
         super(message);
     }
 
+    /**
+     * Constructs a new {@code PrototypeException} with no detail message and the given cause.
+     *
+     * @param cause
+     *              exception cause
+     */
     public PrototypeException(Throwable cause)
     {
         super(cause);
