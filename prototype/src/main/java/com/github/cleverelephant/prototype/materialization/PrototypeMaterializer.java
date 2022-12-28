@@ -35,28 +35,28 @@ public class PrototypeMaterializer extends AbstractTypeResolver
         JavaType type = typeDesc.getType();
         if (!isPrototype(type))
             return null;
-        return config.constructType(getMaterializedPrototype(type));
+        return config.constructType(getMaterializedPrototype(type.getRawClass()));
     }
 
-    private Class<?> getMaterializedPrototype(JavaType type)
+    private Class<?> getMaterializedPrototype(Class<?> prototype)
     {
         try {
-            if (generatedClasses.containsKey(type.getRawClass()))
-                return generatedClasses.get(type.getRawClass());
+            if (generatedClasses.containsKey(prototype))
+                return generatedClasses.get(prototype);
 
-            Class<?> materialized = materializePrototype(type);
-            generatedClasses.put(type.getRawClass(), materialized);
+            Class<?> materialized = materializePrototype(prototype.getName());
+            generatedClasses.put(prototype, materialized);
             return materialized;
         } catch (Exception e) {
-            LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", type, e);
+            LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", prototype, e);
             throw new UnsupportedOperationException(e);
         }
     }
 
-    private Class<?> materializePrototype(JavaType type) throws IOException
+    private Class<?> materializePrototype(String name) throws IOException
     {
-        ClassReader classReader = new ClassReader(type.getRawClass().getName());
-        MaterializingClassVisitor classVisitor = new MaterializingClassVisitor();
+        ClassReader classReader = new ClassReader(name);
+        MaterializingClassVisitor classVisitor = new MaterializingClassVisitor(this::getMaterializedPrototype);
         classReader.accept(classVisitor, 0);
 
         byte[] data = classVisitor.toByteArray();

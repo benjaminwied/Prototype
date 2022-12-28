@@ -1,5 +1,7 @@
 package com.github.cleverelephant.prototype.materialization;
 
+import java.util.function.Consumer;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -15,12 +17,15 @@ public class MaterializingClassVisitor extends ClassVisitor
 {
     private static final String CLASS_CONSTRUCTOR_NAME = "<clinit>";
     private static final String CONSTRUCTOR_NAME = "<init>";
-    private ClassWriter classWriter;
+
+    private final ClassWriter classWriter;
+    private final Consumer<Class<?>> classMaterializer;
     private String className;
 
-    public MaterializingClassVisitor()
+    public MaterializingClassVisitor(Consumer<Class<?>> classMaterializer)
     {
         super(ASM9);
+        this.classMaterializer = classMaterializer;
         classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     }
 
@@ -29,8 +34,16 @@ public class MaterializingClassVisitor extends ClassVisitor
     {
         className = "com/github/cleverelephant/prototype/materialization/generated/" + name;
 
-        String superClassName = "com/github/cleverelephant/prototype/Prototype".equals(name) ? "java/lang/Object"
-                : "com/github/cleverelephant/prototype/materialization/generated/" + interfaces[0];
+        String superClassName;
+        if ("com/github/cleverelephant/prototype/Prototype".equals(name))
+            superClassName = "java/lang/Object";
+        else {
+            String superInterface = interfaces[0];
+            superClassName = "com/github/cleverelephant/prototype/materialization/generated/" + superInterface;
+
+            /* class superClassName may not be materialized yet, so materialize it first */
+            materializedSuperInterface(superInterface);
+        }
 
         classWriter.visit(version, ACC_PUBLIC, className, null, superClassName, new String[] { name });
 
@@ -41,6 +54,16 @@ public class MaterializingClassVisitor extends ClassVisitor
         constructor.visitInsn(RETURN);
         constructor.visitMaxs(0, 0);
         constructor.visitEnd();
+    }
+
+    private void materializedSuperInterface(String superInterface)
+    {
+        try {
+            Class<?> superInterfaceClass = Class.forName(superInterface.replace('/', '.'));
+            classMaterializer.accept(superInterfaceClass);
+        } catch (ClassNotFoundException e) {
+            throw new UnsupportedOperationException("failed to materialized super interface", e);
+        }
     }
 
     @Override

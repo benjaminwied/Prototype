@@ -1,46 +1,31 @@
 package com.github.cleverelephant.prototypetest;
 
-import com.github.cleverelephant.prototype.Prototype;
 import com.github.cleverelephant.prototype.SerializationManager;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SerializationTest
 {
-    List<Prototype<?>> prototypes;
-
-    @BeforeEach
-    void setUp() throws Exception
-    {
-        prototypes = new LinkedList<>();
-    }
-
-    @AfterEach
-    void tearDown() throws Exception
-    {
-        prototypes = null;
-    }
-
     @Test
     void test() throws IOException, URISyntaxException
     {
         Path dataPath = Path.of(getClass().getResource("test.json").toURI());
-        SerializationManager.loadGameData(dataPath.getParent(), prototypes::add);
 
-        assertEquals(1, prototypes.size(), "wrong number of prototypes");
-        Prototype<?> first = prototypes.get(0);
-        TestPrototype proto = assertInstanceOf(TestPrototype.class, first, "wrong instance");
+        TestPrototype proto;
+        try (InputStream in = Files.newInputStream(dataPath)) {
+            proto = SerializationManager.deserializePrototype(in, "test", new TypeReference<TestPrototype>() {});
+        }
 
         assertAll(
                 () -> assertEquals("test", proto.name(), "wrong name"),
