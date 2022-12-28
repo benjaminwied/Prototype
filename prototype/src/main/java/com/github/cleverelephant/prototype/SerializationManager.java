@@ -53,7 +53,6 @@ public final class SerializationManager
     private static final Logger LOGGER = LoggerFactory.getLogger(SerializationManager.class);
 
     static {
-        //        OBJECT_MAPPER.registerModule(new MrBeanModule());
         OBJECT_MAPPER.registerModule(new PrototypeMaterializationModule());
     }
 
@@ -117,9 +116,16 @@ public final class SerializationManager
     {
         try (InputStream in = Files.newInputStream(path)) {
             String prototypeName = prototypeNameFromPath(relativePath);
-            InjectableValues injectableValues = new InjectableValues.Std().addValue("name", prototypeName);
-            return OBJECT_MAPPER.reader(injectableValues).forType(clazz).readValue(in);
+            return deserializePrototype(in, prototypeName, clazz);
         }
+    }
+
+    public static <
+            T extends Prototype<?>> T deserializePrototype(InputStream inputStream, String name, TypeReference<T> clazz)
+                    throws IOException
+    {
+        InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
+        return OBJECT_MAPPER.reader(injectableValues).forType(clazz).readValue(inputStream);
     }
 
     public static String prototypeNameFromPath(Path relativePath)
