@@ -179,10 +179,6 @@ public final class PrototypeManager
         if (protoClass == Prototype.class)
             return null;
 
-        Class<?> superClass = protoClass.getSuperclass();
-        if (superClass != null && Prototype.class.isAssignableFrom(superClass))
-            return prototypeBuilder(superClass.asSubclass(Prototype.class));
-
         Class<? extends Prototype<?>>[] interfaces = Stream.of(protoClass.getInterfaces())
                 .filter(Prototype.class::isAssignableFrom).toArray(Class[]::new);
         if (interfaces.length != 1) {
