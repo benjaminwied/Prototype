@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -75,16 +76,17 @@ public final class PrototypeManager
     public static void putPrototype(Prototype<?> prototype)
     {
         Objects.requireNonNull(prototype, "prototype must not be null");
-        checkName(PROTOTYPE_NAME_PATTERN, prototype.name());
+        String name = prototype.name();
+        checkName(PROTOTYPE_NAME_PATTERN, name);
 
-        Prototype<?> old = PROTOTYPE_MAP.put(prototype.name(), prototype);
+        synchronized (PrototypeManager.class) {
+            Prototype<?> old = PROTOTYPE_MAP.put(name, prototype);
 
-        if (old != null)
-            LOGGER.warn(
-                    Prototype.LOG_MARKER, "Added prototype '{}' to collection, replacing old value", prototype.name()
-            );
-        else
-            LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", prototype.name());
+            if (old != null)
+                LOGGER.warn(Prototype.LOG_MARKER, "Added prototype '{}' to collection, replacing old value", name);
+            else
+                LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", name);
+        }
     }
 
     public static <T, P extends Prototype<T>> Optional<P> getPrototype(Class<T> typeClass, String name)
@@ -199,9 +201,10 @@ public final class PrototypeManager
         return matcher;
     }
 
-    public static void loadPrototypes(Path path) throws IOException
+    public static void loadPrototypes(Path path, Executor executor) throws IOException
     {
-        SerializationManager
-                .loadGameData(Objects.requireNonNull(path, "path must not be null"), PrototypeManager::putPrototype);
+        SerializationManager.loadGameData(
+                Objects.requireNonNull(path, "path must not be null"), PrototypeManager::putPrototype, executor
+        );
     }
 }

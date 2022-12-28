@@ -41,16 +41,21 @@ public class PrototypeMaterializer extends AbstractTypeResolver
 
     private Class<?> getMaterializedPrototype(Class<?> prototype)
     {
-        try {
-            if (generatedClasses.containsKey(prototype))
-                return generatedClasses.get(prototype);
+        if (generatedClasses.containsKey(prototype))
+            return generatedClasses.get(prototype);
 
-            Class<?> materialized = materializePrototype(prototype.getName());
-            generatedClasses.put(prototype, materialized);
-            return materialized;
-        } catch (Exception e) {
-            LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", prototype, e);
-            throw new PrototypeException(e);
+        synchronized (this) {
+            try {
+                if (generatedClasses.containsKey(prototype))
+                    return generatedClasses.get(prototype);
+
+                Class<?> materialized = materializePrototype(prototype.getName());
+                generatedClasses.put(prototype, materialized);
+                return materialized;
+            } catch (Exception e) {
+                LOGGER.error(Prototype.LOG_MARKER, "failed to materialize prototype class {}", prototype, e);
+                throw new PrototypeException(e);
+            }
         }
     }
 

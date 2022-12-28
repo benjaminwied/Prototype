@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Objects;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -61,13 +62,13 @@ public final class SerializationManager
         throw new UnsupportedOperationException();
     }
 
-    public static void loadGameData(Path path, Consumer<Prototype<?>> consumer) throws IOException
+    public static void loadGameData(Path path, Consumer<Prototype<?>> consumer, Executor loadingPool) throws IOException
     {
         Objects.requireNonNull(path, "path must not be null");
         Objects.requireNonNull(consumer, "consumer must not be null");
 
         if (Files.isDirectory(path))
-            loadGameDataFromDirectory(path, consumer);
+            loadGameDataFromDirectory(path, consumer, loadingPool);
         else if (Files.isRegularFile(path))
             /* Empty relative path */
             loadGameDataFromFile(path, path.relativize(path), consumer);
@@ -75,14 +76,18 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
-    private static void loadGameDataFromDirectory(Path path, Consumer<Prototype<?>> consumer) throws IOException
+    private static void loadGameDataFromDirectory(Path path, Consumer<Prototype<?>> consumer, Executor loadingPool)
+            throws IOException
     {
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
             {
-                loadGameDataFromFile(file, path.relativize(file), consumer);
+                if (loadingPool != null)
+                    loadingPool.execute(() -> loadGameDataFromFile(file, path.relativize(file), consumer));
+                else
+                    loadGameDataFromFile(file, path.relativize(file), consumer);
                 return FileVisitResult.CONTINUE;
             }
         });
@@ -94,7 +99,6 @@ public final class SerializationManager
     }
 
     private static void loadGameDataFromFile(Path path, Path relativePath, Consumer<Prototype<?>> consumer)
-            throws IOException
     {
         if (!isFileValid(path)) {
             LOGGER.atWarn().addMarker(LOG_MARKER).log("skipping invalid file {}", compressLoggingPath(path));
@@ -107,7 +111,7 @@ public final class SerializationManager
             consumer.accept(prototype);
         } catch (IOException e) {
             LOGGER.atError().addMarker(LOG_MARKER).setCause(e).log("failed to load game data from path {}", path);
-            throw new IOException("failed to load game data", e);
+            throw new PrototypeException("failed to load game data", e);
         }
     }
 
