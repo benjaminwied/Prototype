@@ -4,5 +4,12 @@
   "b" : 1,
   "c" : true,
   "array" : [ "first", "second" ],
-  "doubleValue": 3.141592
+  "doubleValue" : 3.141592,
+  "generic" : [ {
+    "x" : 1,
+    "y" : "first"
+  }, {
+    "x" : 2,
+    "y" : "second"
+  } ]
 }

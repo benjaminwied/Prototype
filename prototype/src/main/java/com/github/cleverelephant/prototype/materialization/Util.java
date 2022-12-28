@@ -1,5 +1,7 @@
 package com.github.cleverelephant.prototype.materialization;
 
+import java.lang.invoke.TypeDescriptor;
+
 import static org.objectweb.asm.Opcodes.*;
 
 public class Util
@@ -39,12 +41,17 @@ public class Util
         };
     }
 
-    public static String methodDescriptor(Class<?> returnType, Class<?>... paramTypes)
+    public static String methodDescriptor(TypeDescriptor returnType, TypeDescriptor... paramTypes)
     {
         StringBuilder methodDescriptor = new StringBuilder("(");
-        for (Class<?> type : paramTypes)
+        for (TypeDescriptor type : paramTypes)
             methodDescriptor.append(type.descriptorString());
         methodDescriptor.append(")").append(returnType.descriptorString());
         return methodDescriptor.toString();
+    }
+
+    public static String internalName(String name)
+    {
+        return name.replace('.', '/');
     }
 }

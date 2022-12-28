@@ -2,17 +2,16 @@ package com.github.cleverelephant.prototype.materialization;
 
 import com.github.cleverelephant.prototype.Prototype;
 
-import java.lang.reflect.Method;
-import java.util.Comparator;
+import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.AbstractTypeResolver;
 import com.fasterxml.jackson.databind.BeanDescription;
 import com.fasterxml.jackson.databind.DeserializationConfig;
 import com.fasterxml.jackson.databind.JavaType;
+
+import org.objectweb.asm.ClassReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,48 +53,31 @@ public class PrototypeMaterializer extends AbstractTypeResolver
         }
     }
 
-    private Class<?> materializePrototype(JavaType type)
+    private Class<?> materializePrototype(JavaType type) throws IOException
     {
-        Class<?> prototypeClass = type.getRawClass();
+        ClassReader classReader = new ClassReader(type.getRawClass().getName());
+        MaterializingClassVisitor classVisitor = new MaterializingClassVisitor();
+        classReader.accept(classVisitor, 0);
 
-        List<Method> properties = findAbstractProperties(prototypeClass);
-
-        String className = "com.github.cleverelephant.materialization.generated." + prototypeClass.getSimpleName();
-        byte[] data = new ClassGenerator(className, prototypeClass, properties.toArray(Method[]::new))
-                .generateClassData();
-        return classLoader.loadAndResolve(className, data);
+        byte[] data = classVisitor.toByteArray();
+        return classLoader.loadAndResolve(data);
     }
 
-    private List<Method> findAbstractProperties(Class<?> clazz)
-    {
-        List<Method> methods = new LinkedList<>();
-
-        for (Method method : clazz.getMethods()) {
-            if (method.isBridge() || method.isSynthetic() || method.isDefault() || method.getParameterCount() != 0)
-                continue;
-
-            methods.add(method);
-        }
-
-        methods.sort(Comparator.comparing(Method::getName));
-        return methods;
-    }
-
-    private boolean isPrototype(JavaType type)
+    private static boolean isPrototype(JavaType type)
     {
         return type.isTypeOrSubTypeOf(Prototype.class) && type.getRawClass().isInterface();
     }
 
-    private class MyClassLoader extends ClassLoader
+    private static class MyClassLoader extends ClassLoader
     {
-        public Class<?> loadAndResolve(String name, byte[] data)
+        public Class<?> loadAndResolve(byte[] data)
         {
             try {
-                Class<?> impl = defineClass(name, data, 0, data.length);
+                Class<?> impl = defineClass(null, data, 0, data.length);
                 resolveClass(impl);
                 return impl;
             } catch (LinkageError e) {
-                throw new IllegalArgumentException("Failed to load class '" + name + "': " + e.getMessage(), e);
+                throw new IllegalArgumentException("Failed to load class: " + e.getMessage(), e);
             }
         }
     }
