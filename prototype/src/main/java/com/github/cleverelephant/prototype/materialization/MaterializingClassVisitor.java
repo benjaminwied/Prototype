@@ -23,6 +23,10 @@
  */
 package com.github.cleverelephant.prototype.materialization;
 
+import com.github.cleverelephant.prototype.PrototypeException;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -48,9 +52,12 @@ public class MaterializingClassVisitor extends ClassVisitor
 {
     private static final String CLASS_CONSTRUCTOR_NAME = "<clinit>";
     private static final String CONSTRUCTOR_NAME = "<init>";
+    private static final String INTERNAL_PROTOTYPE_EXCEPTION_NAME = PrototypeException.class.getName()
+            .replace('.', '/');
 
     private final ClassWriter classWriter;
     private final Consumer<Class<?>> classMaterializer;
+    private final Map<String, GetterData> getters;
     private String className;
 
     /**
@@ -66,6 +73,7 @@ public class MaterializingClassVisitor extends ClassVisitor
     {
         super(ASM9);
         this.classMaterializer = Objects.requireNonNull(classMaterializer, "classMaterializer must not be null");
+        getters = new HashMap<>();
         classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
     }
 
@@ -109,8 +117,19 @@ public class MaterializingClassVisitor extends ClassVisitor
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions)
     {
-        if (name.startsWith("$") || CLASS_CONSTRUCTOR_NAME.equals(name) || CONSTRUCTOR_NAME.equals(name))
+        if (CLASS_CONSTRUCTOR_NAME.equals(name) || CONSTRUCTOR_NAME.equals(name))
             return null;
+        if (name.startsWith("$")) {
+            String defName = name.substring(1);
+            getters.compute(defName, (__, data) -> {
+                if (data == null)
+                    data = new GetterData();
+                data.hasDefaultValue = true;
+                return data;
+            });
+
+            return null;
+        }
 
         if (signature != null && !signature.startsWith("()") || !descriptor.startsWith("()"))
             throw new IllegalArgumentException();
@@ -126,7 +145,14 @@ public class MaterializingClassVisitor extends ClassVisitor
         classWriter.visitField(ACC_PRIVATE, name, fieldDescriptor, fieldSignature, null);
         classWriter.visitField(ACC_PRIVATE, "$" + name, "B", null, null);
 
-        generateGetter(name, fieldDescriptor, fieldSignature);
+        getters.compute(name, (__, data) -> {
+            if (data == null)
+                data = new GetterData();
+            data.name = name;
+            data.fieldDescriptor = fieldDescriptor;
+            data.fieldSignature = fieldSignature;
+            return data;
+        });
         return generateSetter(name, fieldDescriptor, fieldSignature);
     }
 
@@ -183,16 +209,26 @@ public class MaterializingClassVisitor extends ClassVisitor
         };
     }
 
-    private void generateGetter(String name, String fieldDescriptor, String fieldSignature)
+    private static class GetterData
     {
-        String methodSignature = fieldSignature != null ? "()" + fieldSignature : null;
-        MethodVisitor getter = classWriter.visitMethod(ACC_PUBLIC, name, "()" + fieldDescriptor, methodSignature, null);
+        private String name;
+        private String fieldDescriptor;
+        private String fieldSignature;
+
+        private boolean hasDefaultValue;
+    }
+
+    private void generateGetter(GetterData data)
+    {
+        String methodSignature = data.fieldSignature != null ? "()" + data.fieldSignature : null;
+        MethodVisitor getter = classWriter
+                .visitMethod(ACC_PUBLIC, data.name, "()" + data.fieldDescriptor, methodSignature, null);
 
         /*
          * if($name)
          */
         getter.visitVarInsn(ALOAD, 0);
-        getter.visitFieldInsn(GETFIELD, className, "$" + name, "B");
+        getter.visitFieldInsn(GETFIELD, className, "$" + data.name, "B");
         Label label = new Label();
         getter.visitJumpInsn(Opcodes.IFEQ, label);
 
@@ -200,16 +236,29 @@ public class MaterializingClassVisitor extends ClassVisitor
          * return name;
          */
         getter.visitVarInsn(ALOAD, 0);
-        getter.visitFieldInsn(GETFIELD, className, name, fieldDescriptor);
-        getter.visitInsn(Util.returnOpcode(fieldDescriptor));
+        getter.visitFieldInsn(GETFIELD, className, data.name, data.fieldDescriptor);
+        getter.visitInsn(Util.returnOpcode(data.fieldDescriptor));
 
-        /*
-         * else return $name();
-         */
         getter.visitLabel(label);
-        getter.visitVarInsn(ALOAD, 0);
-        getter.visitMethodInsn(INVOKEVIRTUAL, className, "$" + name, "()" + fieldDescriptor, false);
-        getter.visitInsn(Util.returnOpcode(fieldDescriptor));
+        if (data.hasDefaultValue) {
+            /*
+             * else return $name();
+             */
+            getter.visitVarInsn(ALOAD, 0);
+            getter.visitMethodInsn(INVOKEVIRTUAL, className, "$" + data.name, "()" + data.fieldDescriptor, false);
+            getter.visitInsn(Util.returnOpcode(data.fieldDescriptor));
+        } else {
+            /*
+             * throw new PrototypeException("no value present for property " + data.name);
+             */
+            getter.visitTypeInsn(NEW, INTERNAL_PROTOTYPE_EXCEPTION_NAME);
+            getter.visitInsn(DUP);
+            getter.visitLdcInsn("no value present for property " + data.name);
+            getter.visitMethodInsn(
+                    INVOKESPECIAL, INTERNAL_PROTOTYPE_EXCEPTION_NAME, "<init>", "(Ljava/lang/String;)V", false
+            );
+            getter.visitInsn(ATHROW);
+        }
 
         getter.visitMaxs(0, 0);
         getter.visitEnd();
@@ -218,6 +267,7 @@ public class MaterializingClassVisitor extends ClassVisitor
     @Override
     public void visitEnd()
     {
+        getters.forEach((__, data) -> generateGetter(data));
         classWriter.visitEnd();
     }
 

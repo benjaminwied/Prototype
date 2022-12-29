@@ -41,6 +41,7 @@ public interface TestPrototype extends Prototype<String>
     String[] array();
     double doubleValue();
     List<SimpleContainer> generic();
+    String missingDefault();
 
     default String $d()
     {

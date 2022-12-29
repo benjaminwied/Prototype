@@ -23,6 +23,7 @@
  */
 package com.github.cleverelephant.prototypetest;
 
+import com.github.cleverelephant.prototype.PrototypeException;
 import com.github.cleverelephant.prototype.SerializationManager;
 
 import java.io.IOException;
@@ -61,7 +62,8 @@ class SerializationTest
                                 new TestPrototype.SimpleContainer(1, "first"),
                                 new TestPrototype.SimpleContainer(2, "second")
                         ), proto.generic(), "wrong generic data"
-                )
+                ),
+                () -> assertThrows(PrototypeException.class, () -> proto.missingDefault(), "missing data not missing")
         );
     }
 
