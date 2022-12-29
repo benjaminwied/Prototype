@@ -24,6 +24,7 @@
 package com.github.cleverelephant.prototypetest;
 
 import com.github.cleverelephant.prototype.PrototypeException;
+import com.github.cleverelephant.prototype.PrototypeManager;
 import com.github.cleverelephant.prototype.SerializationManager;
 
 import java.io.IOException;
@@ -35,6 +36,8 @@ import java.util.Arrays;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,16 +45,27 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings("javadoc")
 class SerializationTest
 {
-    @Test
-    void test() throws IOException, URISyntaxException
-    {
-        Path dataPath = Path.of(getClass().getResource("test.json").toURI());
+    static TestPrototype proto;
 
-        TestPrototype proto;
+    @BeforeAll
+    static void setUpBeforeClass() throws URISyntaxException, IOException
+    {
+        Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
+
         try (InputStream in = Files.newInputStream(dataPath)) {
             proto = SerializationManager.deserializePrototype(in, "test", new TypeReference<TestPrototype>() {});
         }
+    }
 
+    @AfterAll
+    static void tearDownAfterClass()
+    {
+        proto = null;
+    }
+
+    @Test
+    void test() throws IOException, URISyntaxException
+    {
         assertAll(
                 () -> assertEquals("test", proto.name(), "wrong name"),
                 () -> assertEquals("a", proto.a(), "wrong data"), () -> assertEquals(1, proto.b(), "wrong data"),
@@ -65,6 +79,15 @@ class SerializationTest
                 ),
                 () -> assertThrows(PrototypeException.class, () -> proto.missingDefault(), "missing data not missing")
         );
+    }
+
+    @Test
+    void testVerifyIntegrity()
+    {
+        PrototypeManager.verifyIntegrity();
+
+        PrototypeManager.putPrototype(proto);
+        assertThrows(PrototypeException.class, PrototypeManager::verifyIntegrity);
     }
 
 }
