@@ -142,8 +142,13 @@ public class MaterializingClassVisitor extends ClassVisitor
             @Override
             public AnnotationVisitor visitAnnotation(String descriptor, boolean visible)
             {
-                if (JsonProperty.class.descriptorString().equals(descriptor))
+                if (JsonProperty.class.descriptorString().equals(descriptor)) {
                     hasJsonPropertyAnnotation = true;
+
+                    /* Do not add JsonPropertyAnnotation for name property */
+                    if ("name".equals(name))
+                        return null;
+                }
 
                 return setter.visitAnnotation(descriptor, visible);
             }
@@ -151,7 +156,7 @@ public class MaterializingClassVisitor extends ClassVisitor
             @Override
             public void visitEnd()
             {
-                if (!hasJsonPropertyAnnotation) {
+                if (!hasJsonPropertyAnnotation && !"name".equals(name)) {
                     AnnotationVisitor visitor = setter.visitAnnotation(JsonProperty.class.descriptorString(), true);
                     visitor.visit("value", name);
                     visitor.visitEnd();
