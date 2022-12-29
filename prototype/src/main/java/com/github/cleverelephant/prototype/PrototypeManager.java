@@ -114,7 +114,7 @@ public final class PrototypeManager
     {
         Objects.requireNonNull(prototype, "prototype" + NULL);
         String name = prototype.name();
-        checkName(PROTOTYPE_NAME_PATTERN, name);
+        checkName(name);
 
         synchronized (PrototypeManager.class) {
             Prototype<?> old = PROTOTYPE_MAP.put(name, prototype);
@@ -147,7 +147,7 @@ public final class PrototypeManager
     public static <T, P extends Prototype<T>> Optional<P> getPrototype(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
-        checkName(PROTOTYPE_NAME_PATTERN, name);
+        checkName(name);
 
         return getPrototypeNoNameCheck(name);
     }
@@ -169,14 +169,17 @@ public final class PrototypeManager
      * an {@link IllegalArgumentException}.
      *
      * @param  <T>
-     *              type
+     *                                  type
      * @param  name
-     *              prototype name
+     *                                  prototype name
      *
-     * @return      the type built
+     * @return                          the type built
      *
-     * @see         #createType(Prototype)
-     * @see         #optionalCreateType(String)
+     * @throws IllegalArgumentException
+     *                                  if not prototype was found
+     *
+     * @see                             #createType(Prototype)
+     * @see                             #optionalCreateType(String)
      */
     public static <T> T createType(String name)
     {
@@ -210,7 +213,7 @@ public final class PrototypeManager
     public static <T> Optional<T> optionalCreateType(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
-        checkName(PROTOTYPE_NAME_PATTERN, name);
+        checkName(name);
 
         Optional<Prototype<T>> prototype = getPrototype(name);
         return prototype.map(PrototypeManager::createType);
@@ -326,14 +329,23 @@ public final class PrototypeManager
         return null;
     }
 
-    private static Matcher checkName(Pattern pattern, String name)
+    /**
+     * Checks if the given string matches conditions for a prototype name. This method either passes if the name is
+     * valid, or throws an {@link IllegalArgumentException} if not.
+     *
+     * @param  name
+     *                                  to check
+     *
+     * @throws IllegalArgumentException
+     *                                  if the name is invalid
+     */
+    public static void checkName(String name)
     {
-        Matcher matcher = pattern.matcher(name);
+        Matcher matcher = PROTOTYPE_NAME_PATTERN.matcher(name);
         if (!matcher.matches()) {
-            LOGGER.error(Prototype.LOG_MARKER, "Prototype name {} does not match required pattern {}", name, pattern);
+            LOGGER.error(Prototype.LOG_MARKER, "Prototype name {} does not match required pattern", name);
             throw new IllegalArgumentException(name);
         }
-        return matcher;
     }
 
     /**
