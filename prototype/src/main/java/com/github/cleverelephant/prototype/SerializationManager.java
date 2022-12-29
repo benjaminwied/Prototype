@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
@@ -77,8 +76,8 @@ public final class SerializationManager
      * Loads game data from a file or a directory. The {@link Consumer#accept(Object) consumer's accept function} is
      * called once for each prototype loaded.<br>
      * <br>
-     * <em>This method should usually not called manually, use {@link PrototypeManager#loadPrototypes(Path, Executor)}
-     * instead.</em>
+     * <em>This method should usually not called manually, use
+     * {@link PrototypeManager#loadPrototypes(Path, ExecutorService)} instead.</em>
      *
      * @param  path
      *                              file or root directory
@@ -92,7 +91,7 @@ public final class SerializationManager
      * @throws NullPointerException
      *                              if either path or consumer is null
      *
-     * @see                         PrototypeManager#loadPrototypes(Path, Executor)
+     * @see                         PrototypeManager#loadPrototypes(Path, ExecutorService)
      */
     public static void loadGameData(Path path, Consumer<Prototype<?>> consumer, ExecutorService loadingPool)
             throws IOException
@@ -178,8 +177,8 @@ public final class SerializationManager
      * Deserializes a single prototype given its name and its class. The stream content must be valid json data. The
      * stream is closed after successful reading, so it should be closed externally.<br>
      * <br>
-     * <em>This method should usually not called manually, use {@link PrototypeManager#loadPrototypes(Path, Executor)}
-     * instead.</em>
+     * <em>This method should usually not called manually, use
+     * {@link PrototypeManager#loadPrototypes(Path, ExecutorService)} instead.</em>
      *
      * @param  <T>
      *                              prototype generic type
@@ -197,7 +196,7 @@ public final class SerializationManager
      * @throws NullPointerException
      *                              if any parameter is {@code null}
      *
-     * @see                         #loadGameData(Path, Consumer, Executor)
+     * @see                         #loadGameData(Path, Consumer, ExecutorService)
      * @see                         #prototypeNameFromPath(Path)
      */
     public static <
