@@ -32,8 +32,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -89,7 +94,8 @@ public final class SerializationManager
      *
      * @see                         PrototypeManager#loadPrototypes(Path, Executor)
      */
-    public static void loadGameData(Path path, Consumer<Prototype<?>> consumer, Executor loadingPool) throws IOException
+    public static void loadGameData(Path path, Consumer<Prototype<?>> consumer, ExecutorService loadingPool)
+            throws IOException
     {
         Objects.requireNonNull(path, "path must not be null");
         Objects.requireNonNull(consumer, "consumer must not be null");
@@ -103,21 +109,36 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
-    private static void loadGameDataFromDirectory(Path path, Consumer<Prototype<?>> consumer, Executor loadingPool)
-            throws IOException
+    private static void loadGameDataFromDirectory(
+            Path path, Consumer<Prototype<?>> consumer, ExecutorService loadingPool
+    ) throws IOException
     {
+        Set<Future<?>> futures = new HashSet<>();
+
         Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
 
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
             {
-                if (loadingPool != null)
-                    loadingPool.execute(() -> loadGameDataFromFile(file, path.relativize(file), consumer));
-                else
+                if (loadingPool == null)
                     loadGameDataFromFile(file, path.relativize(file), consumer);
+                else {
+                    Runnable load = () -> loadGameDataFromFile(file, path.relativize(file), consumer);
+                    futures.add(loadingPool.submit(load));
+                }
                 return FileVisitResult.CONTINUE;
             }
         });
+
+        for (Future<?> future : futures)
+            try {
+                future.get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            } catch (ExecutionException e) {
+                throw new PrototypeException(e.getCause() != null ? e.getCause() : e);
+            }
     }
 
     private static boolean isFileValid(Path path)

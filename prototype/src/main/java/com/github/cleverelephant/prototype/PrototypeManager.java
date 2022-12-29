@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -360,9 +360,9 @@ public final class PrototypeManager
      * @throws IOException
      *                     if an IOException occurs while reading prototypes
      *
-     * @see                SerializationManager#loadGameData(Path, java.util.function.Consumer, Executor)
+     * @see                SerializationManager#loadGameData(Path, java.util.function.Consumer, ExecutorService)
      */
-    public static void loadPrototypes(Path path, Executor executor) throws IOException
+    public static void loadPrototypes(Path path, ExecutorService executor) throws IOException
     {
         SerializationManager
                 .loadGameData(Objects.requireNonNull(path, "path" + NULL), PrototypeManager::putPrototype, executor);
