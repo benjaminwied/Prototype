@@ -38,18 +38,15 @@ package com.github.cleverelephant.prototype;
 public interface PrototypeBuilder<T, P extends Prototype<? extends T>>
 {
     /**
-     * Builds a prototype using an argument (optional). If the {@code arg} parameter is not needed, it must be ignored,
-     * otherwise, an exception may be thrown if the argument is invalid (such as {@code null}).
+     * Builds a prototype.
      *
      * @param  proto
      *                              to build
-     * @param  arg
-     *                              optional argument
      *
      * @return                      the type built
      *
      * @throws NullPointerException
      *                              if proto is null
      */
-    T build(P proto, String arg);
+    T build(P proto);
 }

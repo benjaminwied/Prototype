@@ -51,8 +51,6 @@ public final class PrototypeManager
     private static final String NULL = " must not be null";
     private static final String NAME_NULL = "name" + NULL;
 
-    private static final Pattern PROTOTYPE_WITH_ARG_PATTERN = Pattern
-            .compile("^(?<name>\\w+(?:/\\w+)*)(?:\\[(?<arg>\\w+)\\])?$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern PROTOTYPE_NAME_PATTERN = Pattern
             .compile("^\\w+(?:/\\w+)*$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeManager.class);
@@ -149,10 +147,7 @@ public final class PrototypeManager
     public static <T, P extends Prototype<T>> Optional<P> getPrototype(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
-
-        Matcher matcher = checkName(PROTOTYPE_WITH_ARG_PATTERN, name);
-        /* Discard parameters */
-        name = matcher.group("name");
+        checkName(PROTOTYPE_NAME_PATTERN, name);
 
         return getPrototypeNoNameCheck(name);
     }
@@ -215,17 +210,14 @@ public final class PrototypeManager
     public static <T> Optional<T> optionalCreateType(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
+        checkName(PROTOTYPE_NAME_PATTERN, name);
 
-        Matcher matcher = checkName(PROTOTYPE_WITH_ARG_PATTERN, name);
-
-        Optional<Prototype<T>> prototype = getPrototype(matcher.group("name"));
-        if (prototype.isEmpty())
-            return Optional.empty();
-        return Optional.of(createType(prototype.get(), matcher.group("arg")));
+        Optional<Prototype<T>> prototype = getPrototype(name);
+        return prototype.map(PrototypeManager::createType);
     }
 
     /**
-     * Builds a type using the given prototype. This is equivalent to calling {@code createType(proto, null);}
+     * Builds a type using the given prototype.
      *
      * @param  <T>
      *                                       type
@@ -241,37 +233,9 @@ public final class PrototypeManager
      * @throws UnsupportedOperationException
      *                                       if not builder was found for the given prototype
      *
-     * @see                                  #createType(Prototype, String)
-     * @see                                  PrototypeBuilder#build(Prototype, String)
+     * @see                                  PrototypeBuilder#build(Prototype)
      */
     public static <T, P extends Prototype<? extends T>> T createType(P proto)
-    {
-        return createType(proto, null);
-    }
-
-    /**
-     * Builds the given prototype using the given argument.
-     *
-     * @param  <T>
-     *                                       type
-     * @param  <P>
-     *                                       prototype
-     * @param  proto
-     *                                       to build
-     * @param  arg
-     *                                       build argument (may be null)
-     *
-     * @return                               the built type
-     *
-     * @throws NullPointerException
-     *                                       if proto is null
-     * @throws UnsupportedOperationException
-     *                                       if not builder was found for the given prototype
-     *
-     * @see                                  PrototypeBuilder#build(Prototype, String)
-     * @see                                  #prototypeBuilder(Class)
-     */
-    public static <T, P extends Prototype<? extends T>> T createType(P proto, String arg)
     {
         Objects.requireNonNull(proto, "proto" + NULL);
 
@@ -279,7 +243,7 @@ public final class PrototypeManager
         if (builder == null)
             throw new UnsupportedOperationException("no builder found for prototype " + proto);
 
-        return builder.build(proto, arg);
+        return builder.build(proto);
     }
 
     /**
@@ -308,7 +272,7 @@ public final class PrototypeManager
      *                              if protoClass is null
      *
      * @see                         #registerBuilder(Class, PrototypeBuilder)
-     * @see                         #createType(Prototype, String)
+     * @see                         #createType(Prototype)
      */
     @SuppressWarnings("unchecked")
     public static <T,
