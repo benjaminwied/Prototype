@@ -52,7 +52,7 @@ public final class PrototypeManager
     private static final String NAME_NULL = "name" + NULL;
 
     private static final Pattern PROTOTYPE_WITH_ARG_PATTERN = Pattern
-            .compile("^(?<name>\\w+)(?:\\[(?<arg>\\w+)\\])?$", Pattern.UNICODE_CHARACTER_CLASS);
+            .compile("^(?<name>\\w+(?:/\\w+)*)(?:\\[(?<arg>\\w+)\\])?$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Pattern PROTOTYPE_NAME_PATTERN = Pattern
             .compile("^\\w+(?:/\\w+)*$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeManager.class);
