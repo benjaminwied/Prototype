@@ -76,8 +76,8 @@ class PrototypeReferenceTest
     @Test
     void testPathCompression()
     {
-        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "path/./to/.my/././proto");
-        assertEquals("path/to/.my/proto", reference.getTargetPrototypeName(), "wrong compressed path");
+        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "path/./to/_my/././proto");
+        assertEquals("path/to/_my/proto", reference.getTargetPrototypeName(), "wrong compressed path");
 
         reference = new PrototypeReference<>("abc", "path/to/my/other/../proto");
         assertEquals("path/to/my/proto", reference.getTargetPrototypeName(), "wrong compressed path");
