@@ -25,14 +25,14 @@ package com.github.cleverelephant.prototype;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,73 +67,12 @@ public final class PrototypeManager
     }
 
     /**
-     * Verifies the integrity of all registered Prototype definitions.<br>
-     * <br>
-     * This will check for
-     * <ul>
-     * <li>Missing properties with no default value,
-     * <li>Property & default value accessors that throw exceptions and
-     * <li>Missing {@code PrototypeReference}.
-     * </ul>
-     * If the check passes, this method returns. Otherwise, an {@code PrototypeException} is thrown.
-     *
-     * @throws PrototypeException
-     *                            if an integrity problem is encountered.
+     * @return a unmodifiable snapshot of all prototypes currently registered
      */
-    public static void verifyIntegrity()
+    public static Set<Prototype<?>> allPrototypes()
     {
-        LOGGER.info("Verifying integrity...");
-
-        for (Entry<String, Prototype<?>> entry : PROTOTYPE_MAP.entrySet()) {
-            String name = entry.getKey();
-            Prototype<?> prototype = entry.getValue();
-
-            LOGGER.trace("Verifying integrity of prototype {}", name);
-
-            if (name == null || !name.equals(prototype.name())) {
-                LOGGER.error(
-                        "Integrity of prototype {} invalid: registered with wrong name {}", prototype.name(), name
-                );
-                throw new PrototypeException("Integrity problem: " + name);
-            }
-
-            for (Method method : prototype.getClass().getMethods())
-                verifyMethodIntegrity(name, prototype, method);
-        }
-
-        LOGGER.info("Integrity valid");
-    }
-
-    private static void verifyMethodIntegrity(String name, Prototype<?> prototype, Method method)
-    {
-        if (!Modifier.isStatic(method.getModifiers()) && method.canAccess(prototype)
-                && Modifier.isPublic(method.getModifiers()) && method.getReturnType() != void.class
-                && method.getParameterCount() == 0)
-            try {
-                /* This will check for missing values */
-                Object value = method.invoke(prototype);
-                if (value instanceof PrototypeReference<?, ?> reference && reference.getOptionalPrototype().isEmpty()) {
-                    LOGGER.error(
-                            "Integrity of prototype {} invalid: no referenced prototype found: {}", name,
-                            reference.getTargetPrototypeName()
-                    );
-                    throw new PrototypeException("Integrity problem: " + name);
-                }
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                Throwable x = e.getCause() != null ? e.getCause() : e;
-
-                if (name.startsWith("$"))
-                    LOGGER.error(
-                            "Integrity of prototype {} invalid: default value for property {} invalid", name,
-                            method.getName(), x
-                    );
-                else
-                    LOGGER.error(
-                            "Integrity of prototype {} invalid: no default value for property {}", name,
-                            method.getName(), x
-                    );
-                throw new PrototypeException("Integrity problem: " + name);
-            }
+        return Collections
+                .unmodifiableSet(new HashSet<>(PROTOTYPE_MAP.entrySet().stream().map(Map.Entry::getValue).toList()));
     }
 
     /**

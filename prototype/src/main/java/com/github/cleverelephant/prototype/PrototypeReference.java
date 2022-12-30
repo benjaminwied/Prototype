@@ -40,7 +40,7 @@ import com.fasterxml.jackson.annotation.OptBoolean;
  * @param  <P>
  *             prototype
  */
-public class PrototypeReference<T, P extends Prototype<T>>
+public final class PrototypeReference<T, P extends Prototype<T>>
 {
     private static final Pattern RELATIVE_PARENT_REMOVE = Pattern
             .compile("/\\w+/\\.\\.", Pattern.UNICODE_CHARACTER_CLASS);
@@ -54,6 +54,13 @@ public class PrototypeReference<T, P extends Prototype<T>>
      * Similar to {@link Class#getResource(String)}, if {@code relativeTargetName} starts with '/', it is considered the
      * absolute prototype name. If not, the absolute prototype name is constructed using the folder of
      * {@code sourcePrototypeName}.
+     * <ul>
+     * <li>Similar to {@link Class#getResource(String)}, if {@code relativeTargetName} starts with '/', it is considered
+     * as the absolute prototype name.
+     * <li>If {@code relativeTargetName} starts with '#', it is considered to be relative to
+     * {@code sourcePrototypeName}.
+     * <li>If not, it is considered to be relative to {@code sourcePrototypeName}'s parent.
+     * </ul>
      *
      * @param  sourcePrototypeName
      *                                  name of the prototype this reference originates from
@@ -78,6 +85,8 @@ public class PrototypeReference<T, P extends Prototype<T>>
 
         if (relativeTargetName.startsWith("/"))
             targetPrototypeName = compressPath(relativeTargetName.substring(1));
+        else if (relativeTargetName.startsWith("#"))
+            targetPrototypeName = compressPath(sourcePrototypeName + "/" + relativeTargetName.substring(1));
         else {
             String prototypePackage;
             if (sourcePrototypeName.contains("/"))

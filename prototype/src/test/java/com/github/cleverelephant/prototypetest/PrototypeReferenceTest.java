@@ -54,6 +54,19 @@ class PrototypeReferenceTest
     }
 
     @Test
+    void testSubprotPath()
+    {
+        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "#path/to/my/proto");
+        assertEquals("abc/path/to/my/proto", reference.getTargetPrototypeName(), "wrong relative path");
+
+        reference = new PrototypeReference<>("folder/abc", "#path/to/my/proto");
+        assertEquals("folder/abc/path/to/my/proto", reference.getTargetPrototypeName(), "wrong relative path");
+
+        reference = new PrototypeReference<>("folder/abc", "#proto");
+        assertEquals("folder/abc/proto", reference.getTargetPrototypeName(), "wrong relative path");
+    }
+
+    @Test
     void testAbsolutePath()
     {
         PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "/path/to/my/proto");

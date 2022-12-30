@@ -220,6 +220,9 @@ public class MaterializingClassVisitor extends ClassVisitor
 
     private void generateGetter(GetterData data)
     {
+        if (data.name == null)
+            return;
+
         String methodSignature = data.fieldSignature != null ? "()" + data.fieldSignature : null;
         MethodVisitor getter = classWriter
                 .visitMethod(ACC_PUBLIC, data.name, "()" + data.fieldDescriptor, methodSignature, null);

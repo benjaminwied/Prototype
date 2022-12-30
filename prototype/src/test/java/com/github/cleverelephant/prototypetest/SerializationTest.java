@@ -23,8 +23,8 @@
  */
 package com.github.cleverelephant.prototypetest;
 
+import com.github.cleverelephant.prototype.IntegrityChecker;
 import com.github.cleverelephant.prototype.PrototypeException;
-import com.github.cleverelephant.prototype.PrototypeManager;
 import com.github.cleverelephant.prototype.SerializationManager;
 
 import java.io.IOException;
@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class SerializationTest
 {
     static TestPrototype proto;
+    static WrongDefaultPrototype wrongDefaultPrototype;
 
     @BeforeAll
     static void setUpBeforeClass() throws URISyntaxException, IOException
@@ -55,12 +56,19 @@ class SerializationTest
         try (InputStream in = Files.newInputStream(dataPath)) {
             proto = SerializationManager.deserializePrototype(in, "test", new TypeReference<TestPrototype>() {});
         }
+
+        dataPath = Path.of(SerializationTest.class.getResource("wrongDefault.json").toURI());
+        try (InputStream in = Files.newInputStream(dataPath)) {
+            wrongDefaultPrototype = SerializationManager
+                    .deserializePrototype(in, "wrongDefault", new TypeReference<WrongDefaultPrototype>() {});
+        }
     }
 
     @AfterAll
     static void tearDownAfterClass()
     {
         proto = null;
+        wrongDefaultPrototype = null;
     }
 
     @Test
@@ -84,10 +92,8 @@ class SerializationTest
     @Test
     void testVerifyIntegrity()
     {
-        PrototypeManager.verifyIntegrity();
-
-        PrototypeManager.putPrototype(proto);
-        assertThrows(PrototypeException.class, PrototypeManager::verifyIntegrity);
+        assertTrue(IntegrityChecker.verifySelfContaintedIntegrity(proto));
+        assertTrue(IntegrityChecker.verifySelfContaintedIntegrity(wrongDefaultPrototype));
     }
 
 }
