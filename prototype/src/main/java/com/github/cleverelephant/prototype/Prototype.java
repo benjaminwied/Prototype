@@ -43,7 +43,7 @@ import org.slf4j.MarkerFactory;
  * @see        PrototypeBuilder
  * @see        PrototypeManager
  */
-@JsonTypeInfo(use = Id.CLASS, include = As.PROPERTY, property = "$prototypeClass")
+@JsonTypeInfo(use = Id.CLASS, include = As.WRAPPER_OBJECT)
 public interface Prototype<T>
 {
     /**

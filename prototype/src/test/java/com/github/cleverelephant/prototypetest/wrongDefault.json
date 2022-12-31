@@ -1,4 +1,5 @@
 {
-  "$prototypeClass" : "com.github.cleverelephant.prototypetest.WrongDefaultPrototype",
-  "value": "abc"
+  "com.github.cleverelephant.prototypetest.WrongDefaultPrototype" : {
+    "value" : "abc"
+  }
 }
