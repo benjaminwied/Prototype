@@ -30,24 +30,19 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.AbstractTypeResolver;
-import com.fasterxml.jackson.databind.BeanDescription;
-import com.fasterxml.jackson.databind.DeserializationConfig;
-import com.fasterxml.jackson.databind.JavaType;
-
 import org.objectweb.asm.ClassReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An {@code AbstractTypeResolver} that resolves Prototypes using byte code generation.
+ * Resolves Prototypes using byte code generation.
  *
  * @author Benjamin Wied
  *
  * @see    MaterializingClassVisitor
  */
-public class PrototypeMaterializer extends AbstractTypeResolver
+public class PrototypeMaterializer
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeMaterializer.class);
 
@@ -63,13 +58,9 @@ public class PrototypeMaterializer extends AbstractTypeResolver
         classLoader = new MyClassLoader();
     }
 
-    @Override
-    public JavaType resolveAbstractType(DeserializationConfig config, BeanDescription typeDesc)
+    public Class<?> getPrototypeImplemetation(Class<?> prototypeClazz)
     {
-        JavaType type = typeDesc.getType();
-        if (!isPrototype(type))
-            return null;
-        return config.constructType(getMaterializedPrototype(type.getRawClass()));
+        return getMaterializedPrototype(prototypeClazz);
     }
 
     private Class<?> getMaterializedPrototype(Class<?> prototype)
@@ -100,11 +91,6 @@ public class PrototypeMaterializer extends AbstractTypeResolver
 
         byte[] data = classVisitor.toByteArray();
         return classLoader.loadAndResolve(data);
-    }
-
-    private static boolean isPrototype(JavaType type)
-    {
-        return type.isTypeOrSubTypeOf(Prototype.class) && type.getRawClass().isInterface();
     }
 
     private static class MyClassLoader extends ClassLoader

@@ -23,8 +23,6 @@
  */
 package com.github.cleverelephant.prototype;
 
-import com.github.cleverelephant.prototype.materialization.PrototypeMaterializationModule;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -63,9 +61,9 @@ public final class SerializationManager
     private static final Path APPLICATION_ROOT = Path.of(".").toAbsolutePath().normalize();
     private static final Logger LOGGER = LoggerFactory.getLogger(SerializationManager.class);
 
-    static {
-        OBJECT_MAPPER.registerModule(new PrototypeMaterializationModule());
-    }
+    //    static {
+    //        OBJECT_MAPPER.registerModule(new PrototypeMaterializationModule());
+    //    }
 
     private SerializationManager()
     {

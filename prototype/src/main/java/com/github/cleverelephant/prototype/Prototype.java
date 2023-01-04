@@ -28,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.OptBoolean;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -43,7 +44,8 @@ import org.slf4j.MarkerFactory;
  * @see        PrototypeBuilder
  * @see        PrototypeManager
  */
-@JsonTypeInfo(use = Id.CLASS, include = As.WRAPPER_OBJECT)
+@JsonTypeInfo(use = Id.CUSTOM, include = As.WRAPPER_OBJECT)
+@JsonTypeIdResolver(PrototypeIdResolver.class)
 public interface Prototype<T>
 {
     /**
