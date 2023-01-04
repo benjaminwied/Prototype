@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -112,7 +113,7 @@ public final class PrototypeManager
     }
 
     /**
-     * Adds a prototype to the collection.
+     * Adds a prototype to the collection, fails if an prototype with the same name already exists.
      *
      * @param  prototype
      *                                  to add
@@ -121,21 +122,63 @@ public final class PrototypeManager
      *                                  if prototype is null
      * @throws IllegalArgumentException
      *                                  if prototype.name() is an invalid name
+     * @throws IllegalArgumentException
+     *                                  if an prototype with the same name already exists, use
+     *                                  {@link #replacePrototype(Prototype)} for replacing prototype
+     *
+     * @see                             #replacePrototype(Prototype)
      */
-    public static void putPrototype(Prototype<?> prototype)
+    public static void addPrototype(Prototype<?> prototype)
+    {
+        registerPrototype(prototype, (name, proto) -> {
+            if (PROTOTYPE_MAP.containsKey(name)) {
+                LOGGER.warn(
+                        Prototype.LOG_MARKER,
+                        "Failed to add prototype {} to collection, a prototype with the same name already exists {}",
+                        proto, PROTOTYPE_MAP.get(name)
+                );
+                throw new IllegalArgumentException("An prototype with the same name already exists");
+            }
+
+            PROTOTYPE_MAP.put(name, proto);
+            LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", name);
+        });
+    }
+
+    private static void registerPrototype(Prototype<?> prototype, BiConsumer<String, Prototype<?>> action)
     {
         Objects.requireNonNull(prototype, "prototype" + NULL);
         String name = prototype.name();
         checkName(name);
 
         synchronized (PrototypeManager.class) {
+            action.accept(name, prototype);
+        }
+    }
+
+    /**
+     * Adds a prototype to the collection, replacing the old one (if one exists).
+     *
+     * @param  prototype
+     *                                  to add
+     *
+     * @throws NullPointerException
+     *                                  if prototype is null
+     * @throws IllegalArgumentException
+     *                                  if prototype.name() is an invalid name
+     *
+     * @see                             #addPrototype(Prototype)
+     */
+    public static void replacePrototype(Prototype<?> prototype)
+    {
+        registerPrototype(prototype, (name, proto) -> {
             Prototype<?> old = PROTOTYPE_MAP.put(name, prototype);
 
             if (old != null)
                 LOGGER.warn(Prototype.LOG_MARKER, "Added prototype '{}' to collection, replacing old value", name);
             else
                 LOGGER.trace(Prototype.LOG_MARKER, "Added prototype '{}' to collection", name);
-        }
+        });
     }
 
     /**
@@ -377,6 +420,6 @@ public final class PrototypeManager
     public static void loadPrototypes(Path path, ExecutorService executor) throws IOException
     {
         SerializationManager
-                .loadGameData(Objects.requireNonNull(path, "path" + NULL), PrototypeManager::putPrototype, executor);
+                .loadGameData(Objects.requireNonNull(path, "path" + NULL), PrototypeManager::addPrototype, executor);
     }
 }
