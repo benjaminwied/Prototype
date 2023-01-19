@@ -35,6 +35,8 @@ import java.nio.file.Path;
 import java.util.Arrays;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,37 +44,42 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({ "javadoc", "static-method" })
 class SerializationTest
 {
     static TestPrototype proto;
     static WrongDefaultPrototype wrongDefaultPrototype;
+    static ObjectMapper objectMapper;
 
     @BeforeAll
     static void setUpBeforeClass() throws URISyntaxException, IOException
     {
-        Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
+        objectMapper = new ObjectMapper();
 
+        Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
         try (InputStream in = Files.newInputStream(dataPath)) {
-            proto = SerializationManager.deserializePrototype(in, "test", new TypeReference<TestPrototype>() {});
+            JsonNode node = objectMapper.readTree(in);
+            proto = SerializationManager.deserializePrototype(node, "test", new TypeReference<TestPrototype>() {});
         }
 
         dataPath = Path.of(SerializationTest.class.getResource("wrongDefault.json").toURI());
         try (InputStream in = Files.newInputStream(dataPath)) {
+            JsonNode node = objectMapper.readTree(in);
             wrongDefaultPrototype = SerializationManager
-                    .deserializePrototype(in, "wrongDefault", new TypeReference<WrongDefaultPrototype>() {});
+                    .deserializePrototype(node, "wrongDefault", new TypeReference<WrongDefaultPrototype>() {});
         }
     }
 
     @AfterAll
     static void tearDownAfterClass()
     {
+        objectMapper = null;
         proto = null;
         wrongDefaultPrototype = null;
     }
 
     @Test
-    void test() throws IOException, URISyntaxException
+    void test()
     {
         assertAll(
                 () -> assertEquals("test", proto.name(), "wrong name"),

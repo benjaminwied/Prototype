@@ -23,8 +23,10 @@
  */
 package com.github.cleverelephant.prototype;
 
+import com.github.cleverelephant.prototype.parser.Action;
+import com.github.cleverelephant.prototype.parser.DefinitionDeserializer;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,10 +38,12 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.InjectableValues;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
@@ -57,13 +61,9 @@ import org.slf4j.LoggerFactory;
  */
 public final class SerializationManager
 {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static final Path APPLICATION_ROOT = Path.of(".").toAbsolutePath().normalize();
     private static final Logger LOGGER = LoggerFactory.getLogger(SerializationManager.class);
-
-    //    static {
-    //        OBJECT_MAPPER.registerModule(new PrototypeMaterializationModule());
-    //    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private SerializationManager()
     {
@@ -91,7 +91,7 @@ public final class SerializationManager
      *
      * @see                         PrototypeManager#loadPrototypes(Path, ExecutorService)
      */
-    public static void loadGameData(Path path, Consumer<Prototype<?>> consumer, ExecutorService loadingPool)
+    public static void loadGameData(Path path, BiConsumer<String, Action> consumer, ExecutorService loadingPool)
             throws IOException
     {
         Objects.requireNonNull(path, "path must not be null");
@@ -106,8 +106,46 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
+    /**
+     * Deserializes a single prototype given its name and its class.<br>
+     * <br>
+     * <em>This method should usually not called manually, use
+     * {@link PrototypeManager#loadPrototypes(Path, ExecutorService)} instead.</em>
+     *
+     * @param  <T>
+     *                              prototype generic type
+     * @param  data
+     *                              data source
+     * @param  name
+     *                              prototype name
+     * @param  clazz
+     *                              prototype class
+     *
+     * @return                      the deserialized prototype
+     *
+     * @throws NullPointerException
+     *                              if any parameter is {@code null}
+     *
+     * @see                         #loadGameData(Path, BiConsumer, ExecutorService)
+     * @see                         #prototypeNameFromPath(Path)
+     */
+    public static <T extends Prototype<?>> T deserializePrototype(JsonNode data, String name, TypeReference<T> clazz)
+    {
+        try {
+            if (data == null)
+                throw new NullPointerException("data must not be null");
+            Objects.requireNonNull(name, "name must not be null");
+            Objects.requireNonNull(clazz, "clazz must not be null");
+
+            InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
+            return OBJECT_MAPPER.reader(injectableValues).forType(clazz).readValue(data);
+        } catch (IOException e) {
+            throw new PrototypeException("failed to deserialize prototype", e);
+        }
+    }
+
     private static void loadGameDataFromDirectory(
-            Path path, Consumer<Prototype<?>> consumer, ExecutorService loadingPool
+            Path path, BiConsumer<String, Action> consumer, ExecutorService loadingPool
     ) throws IOException
     {
         Set<Future<?>> futures = new HashSet<>();
@@ -143,7 +181,7 @@ public final class SerializationManager
         return path.getFileName().toString().endsWith(".json");
     }
 
-    private static void loadGameDataFromFile(Path path, Path relativePath, Consumer<Prototype<?>> consumer)
+    private static void loadGameDataFromFile(Path path, Path relativePath, BiConsumer<String, Action> consumer)
     {
         if (!isFileValid(path)) {
             LOGGER.atWarn().addMarker(Prototype.LOG_MARKER).log("skipping invalid file {}", compressLoggingPath(path));
@@ -153,61 +191,15 @@ public final class SerializationManager
         try {
             LOGGER.atDebug().addMarker(Prototype.LOG_MARKER)
                     .log("loading game data from path {}", compressLoggingPath(path));
-            Prototype<?> prototype = deserializePrototype(path, relativePath, new TypeReference<Prototype<?>>() {});
-            consumer.accept(prototype);
+
+            String name = prototypeNameFromPath(relativePath);
+            Action action = DefinitionDeserializer.deserializeDefinition(Files.readString(path));
+            consumer.accept(name, action);
         } catch (IOException e) {
             LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e)
                     .log("failed to load game data from path {}", path);
             throw new PrototypeException("failed to load game data", e);
         }
-    }
-
-    private static <T extends Prototype<?>> T deserializePrototype(Path path, Path relativePath, TypeReference<T> clazz)
-            throws IOException
-    {
-        try (InputStream in = Files.newInputStream(path)) {
-            String prototypeName = prototypeNameFromPath(relativePath);
-            return deserializePrototype(in, prototypeName, clazz);
-        }
-    }
-
-    /**
-     * Deserializes a single prototype given its name and its class. The stream content must be valid json data. The
-     * stream is closed after successful reading, so it should be closed externally.<br>
-     * <br>
-     * <em>This method should usually not called manually, use
-     * {@link PrototypeManager#loadPrototypes(Path, ExecutorService)} instead.</em>
-     *
-     * @param  <T>
-     *                              prototype generic type
-     * @param  inputStream
-     *                              data source
-     * @param  name
-     *                              prototype name
-     * @param  clazz
-     *                              prototype class
-     *
-     * @return                      the deserialized prototype
-     *
-     * @throws IOException
-     *                              if an exception occurs
-     * @throws NullPointerException
-     *                              if any parameter is {@code null}
-     *
-     * @see                         #loadGameData(Path, Consumer, ExecutorService)
-     * @see                         #prototypeNameFromPath(Path)
-     */
-    public static <
-            T extends Prototype<?>> T deserializePrototype(InputStream inputStream, String name, TypeReference<T> clazz)
-                    throws IOException
-    {
-        if (inputStream == null)
-            throw new NullPointerException("inputStream must not be null");
-        Objects.requireNonNull(name, "name must not be null");
-        Objects.requireNonNull(clazz, "clazz must not be null");
-
-        InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
-        return OBJECT_MAPPER.reader(injectableValues).forType(clazz).readValue(inputStream);
     }
 
     /**

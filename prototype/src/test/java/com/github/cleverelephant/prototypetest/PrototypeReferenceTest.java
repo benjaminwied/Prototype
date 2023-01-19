@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({ "javadoc", "static-method" })
 class PrototypeReferenceTest
 {
     static ObjectMapper OBJECT_MAPPER;
