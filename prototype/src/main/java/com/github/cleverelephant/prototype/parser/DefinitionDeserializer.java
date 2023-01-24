@@ -26,6 +26,7 @@ package com.github.cleverelephant.prototype.parser;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
 
+import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
@@ -55,7 +56,7 @@ public final class DefinitionDeserializer
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
+        parser.setErrorHandler(new BailErrorStrategy());
 
         return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
     }
