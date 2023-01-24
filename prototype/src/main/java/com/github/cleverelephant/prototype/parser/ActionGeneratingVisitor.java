@@ -23,13 +23,25 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
+import com.github.cleverelephant.prototype.Prototype;
+import com.github.cleverelephant.prototype.PrototypeException;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeBaseVisitor;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.AddActionContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ApplyFromActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ArrayContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ContentContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.KeyValueContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ModifyActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ObjectContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.PrototypeContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.RemoveActionContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.RenameActionContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ReplaceActionContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.SetActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ValueContext;
+
+import java.util.function.BiFunction;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -45,16 +57,88 @@ import com.fasterxml.jackson.databind.node.TextNode;
  *
  * @author Benjamin Wied
  */
-class ActionGeneratingVisitor extends PrototypeBaseVisitor<Action>
+class ActionGeneratingVisitor extends PrototypeBaseVisitor<Object>
 {
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public PrototypeDefinition visitPrototype(PrototypeContext ctxt)
+    {
+        Class<? extends Prototype<?>> clazz = null;
+        if (ctxt.header() != null && ctxt.header().classDefinition() != null)
+            try {
+                clazz = (Class<? extends Prototype<?>>) Class
+                        .forName(string(ctxt.header().classDefinition().STRINGLITERAL().toString()))
+                        .asSubclass(Prototype.class);
+            } catch (ClassNotFoundException e) {
+                throw new PrototypeException(e);
+            }
+
+        Action[] actions = visitContent(ctxt.content());
+        return new PrototypeDefinition(clazz, actions);
+    }
+
+    @Override
+    public Action[] visitContent(ContentContext ctxt)
+    {
+        return ctxt.action().stream().map(this::visitAction).toArray(Action[]::new);
+    }
+
+    @Override
+    public Object visitApplyFromAction(ApplyFromActionContext ctxt)
+    {
+        String source = string(ctxt.STRINGLITERAL().getText());
+        return new ApplyFromAction(source);
+    }
+
+    @Override
+    public Action visitModifyAction(ModifyActionContext ctxt)
+    {
+        String source = string(ctxt.key().getText());
+        Action[] action = ctxt.action().stream().map(this::visitAction).toArray(Action[]::new);
+        return new ModifyAction(source, action);
+    }
+
     @Override
     public Action visitAddAction(AddActionContext ctxt)
     {
-        KeyValueContext keyValueContext = ctxt.keyValue();
-        String key = string(keyValueContext.key().getText());
-        JsonNode node = jsonValue(keyValueContext.value());
+        return visitSetLikeAction(ctxt.keyValue(), AddAction::new);
+    }
 
-        return new AddAction(key, node);
+    @Override
+    public Action visitRenameAction(RenameActionContext ctxt)
+    {
+        String source = string(ctxt.key(0).getText());
+        String target = string(ctxt.key(1).getText());
+
+        return new RenameAction(source, target);
+    }
+
+    @Override
+    public Action visitRemoveAction(RemoveActionContext ctxt)
+    {
+        String key = string(ctxt.key().getText());
+        return new RemoveAction(key);
+    }
+
+    @Override
+    public Action visitSetAction(SetActionContext ctxt)
+    {
+        return visitSetLikeAction(ctxt.keyValue(), SetAction::new);
+    }
+
+    @Override
+    public Action visitReplaceAction(ReplaceActionContext ctxt)
+    {
+        return visitSetLikeAction(ctxt.keyValue(), ReplaceAction::new);
+    }
+
+    private static Action visitSetLikeAction(KeyValueContext ctxt, BiFunction<String, JsonNode, Action> generater)
+    {
+        String key = string(ctxt.key().getText());
+        JsonNode node = jsonValue(ctxt.value());
+
+        return generater.apply(key, node);
     }
 
     private static ArrayNode array(ArrayContext array)
@@ -106,11 +190,17 @@ class ActionGeneratingVisitor extends PrototypeBaseVisitor<Action>
     }
 
     @Override
-    protected Action aggregateResult(Action aggregate, Action nextResult)
+    protected Object aggregateResult(Object aggregate, Object nextResult)
     {
         if (nextResult != null)
             return nextResult;
         return aggregate;
+    }
+
+    @Override
+    public Action visitAction(ActionContext ctx)
+    {
+        return (Action) super.visitAction(ctx);
     }
 
 }

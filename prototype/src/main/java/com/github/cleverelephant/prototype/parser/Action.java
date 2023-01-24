@@ -23,10 +23,17 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
+import com.github.cleverelephant.prototype.Prototype;
+import com.github.cleverelephant.prototype.PrototypeContext;
+import com.github.cleverelephant.prototype.PrototypeException;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * An action defined in an prototype definition. It changes to json data of the generated prototype.
+ * An action defined in an prototype definition. It changes json data of the generated prototype.
  *
  * @author Benjamin Wied
  *
@@ -35,28 +42,59 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public abstract class Action
 {
-    /**
-     * The key (or property name) this action corresponds to. It is the class name of the generated prototype if used as
-     * a top-level action.
-     */
-    protected final String key;
+    private static final Logger LOGGER = LoggerFactory.getLogger(Action.class);
 
     /**
-     * Creates a new Action using the specified key.
+     * Reports that the given node is not an object.
+     *
+     * @param parentNode
+     *                   to report
+     */
+    protected static void reportNotObject(JsonNode parentNode)
+    {
+        LOGGER.atError().addMarker(Prototype.LOG_MARKER).addKeyValue("parentNode", parentNode)
+                .log("parentNode of AddAction must be an ObjectNode");
+        throw new IllegalArgumentException("parentNode of AddAction must be an object");
+    }
+
+    /**
+     * Reports that a node with the given key is already defined as a child of parentNode.
      *
      * @param key
-     *            key (or property name)
+     *                   key of node to report
+     * @param parentNode
+     *                   parentNode
      */
-    protected Action(String key)
+    protected static void reportAlreadyDefined(String key, JsonNode parentNode)
     {
-        this.key = key;
+        LOGGER.atError().addMarker(Prototype.LOG_MARKER).addKeyValue("key", key).addKeyValue("parentNode", parentNode)
+                .log("key {} is alreay defined in parentNode", key);
+        throw new PrototypeException("key " + key + " is already defined in parentNode");
+    }
+
+    /**
+     * Reports that no no with the given key is defined a a child of parentNode.
+     *
+     * @param key
+     *                   key of node to report
+     * @param parentNode
+     *                   parentNode
+     */
+    protected static void reportNotDefined(String key, JsonNode parentNode)
+    {
+        LOGGER.atError().addMarker(Prototype.LOG_MARKER).addKeyValue("key", key).addKeyValue("parentNode", parentNode)
+                .log("key {} is not defined in parentNode", key);
+        throw new PrototypeException("key " + key + " is already defined in parentNode");
     }
 
     /**
      * Modifies the given data according to the rules defined by this action.
      *
-     * @param data
-     *             is modified directly (rather than cloning it first)
+     * @param context
+     *                   prototype context to respect, may or may not have an effect
+     * @param parentNode
+     *                   is modified directly (rather than cloning it first)
      */
-    public abstract void apply(JsonNode data);
+    public abstract void apply(PrototypeContext context, JsonNode parentNode);
+
 }

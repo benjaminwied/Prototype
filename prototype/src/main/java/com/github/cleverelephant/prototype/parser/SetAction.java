@@ -23,40 +23,58 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
+import com.github.cleverelephant.prototype.PrototypeContext;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Deserializes prototype definitions unsint ANTRL4.
+ * Sets the specified property.
  *
  * @author Benjamin Wied
  */
-public final class DefinitionDeserializer
+public class SetAction extends KeyAction
 {
-    private DefinitionDeserializer()
+    private final JsonNode data;
+
+    /**
+     * Creates a new SetAction using the specified key and data
+     *
+     * @param key
+     *             property name
+     * @param data
+     *             property value
+     */
+    public SetAction(String key, JsonNode data)
     {
-        throw new UnsupportedOperationException();
+        super(key);
+        this.data = data;
+    }
+
+    @Override
+    public void apply(PrototypeContext context, JsonNode parentNode)
+    {
+        if (!parentNode.isObject())
+            reportNotObject(parentNode);
+
+        ObjectNode objectNode = (ObjectNode) parentNode;
+        set(key, objectNode, data.deepCopy());
     }
 
     /**
-     * Deserializes a prototype definition from the given input.
+     * Sets the specified property, subclasses may override this to perform additional checks.
      *
-     * @param  input
-     *               definition data
-     *
-     * @return       action deserialized
+     * @param key
+     *               property name
+     * @param parent
+     *               property owner
+     * @param data
+     *               value
      */
-    public static PrototypeDefinition deserializeDefinition(String input)
+    @SuppressWarnings("static-method")
+    protected void set(String key, ObjectNode parent, JsonNode data)
     {
-        PrototypeLexer lexer = new PrototypeLexer(CharStreams.fromString(input));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
-
-        return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
+        parent.set(key, data);
     }
+
 }

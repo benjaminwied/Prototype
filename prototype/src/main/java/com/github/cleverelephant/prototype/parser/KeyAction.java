@@ -23,40 +23,26 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-
 /**
- * Deserializes prototype definitions unsint ANTRL4.
+ * Common base class for actions that have a key, e.g. actions that make changes to a child node.
  *
  * @author Benjamin Wied
  */
-public final class DefinitionDeserializer
+public abstract class KeyAction extends Action
 {
-    private DefinitionDeserializer()
-    {
-        throw new UnsupportedOperationException();
-    }
+    /**
+     * The key (or property name) this action corresponds to.
+     */
+    protected final String key;
 
     /**
-     * Deserializes a prototype definition from the given input.
+     * Creates a new KeyAction using the specified key.
      *
-     * @param  input
-     *               definition data
-     *
-     * @return       action deserialized
+     * @param key
+     *            key (or property name)
      */
-    public static PrototypeDefinition deserializeDefinition(String input)
+    protected KeyAction(String key)
     {
-        PrototypeLexer lexer = new PrototypeLexer(CharStreams.fromString(input));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
-
-        return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
+        this.key = key;
     }
 }

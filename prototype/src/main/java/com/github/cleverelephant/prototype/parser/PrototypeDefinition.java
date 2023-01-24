@@ -23,70 +23,117 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import java.util.LinkedList;
-import java.util.List;
+import com.github.cleverelephant.prototype.Prototype;
+import com.github.cleverelephant.prototype.PrototypeContext;
+import com.github.cleverelephant.prototype.PrototypeException;
+
+import java.util.Arrays;
+import java.util.Objects;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Maintains an action-chain and creates the final json-data for prototype definitions.
+ * Maintains an action-chain and creates the final json-data for prototype definitions.<br>
+ * <br>
+ * Objects of this class are immutable.
  *
  * @author Benjamin Wied
  */
 public class PrototypeDefinition
 {
-    private final String name;
-    private final List<Action> actions;
-
-    private JsonNode cachedResult;
+    private final Class<? extends Prototype<?>> prototypeClass;
+    private final Action[] actions;
 
     /**
      * Creates a new PrototypeDefinition for a prototype with the given name.
      *
-     * @param name
-     *             prototype name
+     * @param prototypeClass
+     *                       prototype class
+     * @param actions
+     *                       prototype actions
      */
-    public PrototypeDefinition(String name)
+    public PrototypeDefinition(Class<? extends Prototype<?>> prototypeClass, Action... actions)
     {
-        this.name = name;
-        actions = new LinkedList<>();
+        this.prototypeClass = prototypeClass;
+        this.actions = Arrays.copyOf(actions, actions.length);
     }
 
     /**
-     * Adds a new action to the end of the chain.
+     * Creates a PrototypeDefinition, that, when applied, will first apply this definition and than the method
+     * parameter.
      *
-     * @param action
-     *               to add
+     * @param  other
+     *                            to apply after this {@code this} definition
+     *
+     * @return                    a new PrototypeDefinition
+     *
+     * @throws PrototypeException
+     *                            if the prototype classes represented by {@code this} and {@code other} are not
+     *                            compatible.
      */
-    public synchronized void addAction(Action action)
+    public PrototypeDefinition merge(PrototypeDefinition other)
     {
-        actions.add(action);
-        cachedResult = null;
+        Class<? extends Prototype<?>> pc = prototypeClass;
+        if (prototypeClass == null)
+            pc = other.prototypeClass;
+        else if (other.prototypeClass != null) {
+            /* Compatibility currently only means: is subclass */
+            if (!pc.isAssignableFrom(other.prototypeClass))
+                throw new PrototypeException(
+                        "Canno merge PrototypeDefinitions: incompatible classes (" + prototypeClass + ","
+                                + other.prototypeClass + ")"
+                );
+            pc = other.prototypeClass;
+        }
+
+        Action[] a = Arrays.copyOf(actions, actions.length + other.actions.length);
+        System.arraycopy(other.actions, 0, a, actions.length, other.actions.length);
+
+        return new PrototypeDefinition(pc, a);
     }
 
     /**
-     * Generates the data, using previously cached data if available.
+     * Returns the data represented by this action, including the name of the prototype class.
      *
-     * @return the final json-data
+     * @param  context
+     *                 active context
+     *
+     * @return         generated data
      */
-    public synchronized JsonNode getData()
+    public JsonNode getData(PrototypeContext context)
     {
-        if (cachedResult != null)
-            return cachedResult;
+        ObjectNode data = new ObjectNode(JsonNodeFactory.instance);
+        apply(context, data);
 
-        cachedResult = new ObjectNode(JsonNodeFactory.instance);
+        ObjectNode wrapped = new ObjectNode(JsonNodeFactory.instance);
+        wrapped.set(prototypeClass.getName(), data);
+        return wrapped;
+    }
+
+    /**
+     * Applies all actions contained in this definition to the given node.
+     *
+     * @param context
+     *                active context
+     * @param data
+     *                to modify
+     */
+    public void apply(PrototypeContext context, ObjectNode data)
+    {
+        Objects.requireNonNull(context, "context must not be null");
+        Objects.requireNonNull(data, "data must not be null");
+
         for (Action action : actions)
-            action.apply(cachedResult);
-        return cachedResult;
+            action.apply(context, data);
     }
 
     /**
-     * @return the name of this definition
+     * @return the prototype class represented by this definition, or {@code null} if no class was specified
      */
-    public String getName()
+    public Class<?> getPrototypeClass()
     {
-        return name;
+        return prototypeClass;
     }
 }

@@ -23,40 +23,40 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
+import com.github.cleverelephant.prototype.PrototypeContext;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import java.util.Arrays;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
- * Deserializes prototype definitions unsint ANTRL4.
+ * Executes child actions if and only if the current {@link PrototypeContext} contains a the corresponding key.
  *
  * @author Benjamin Wied
  */
-public final class DefinitionDeserializer
+public class ConditionalAction extends Action
 {
-    private DefinitionDeserializer()
-    {
-        throw new UnsupportedOperationException();
-    }
+    private final String condition;
+    private final Action[] subActions;
 
     /**
-     * Deserializes a prototype definition from the given input.
-     *
-     * @param  input
-     *               definition data
-     *
-     * @return       action deserialized
+     * @param condition
+     *                   to check for
+     * @param subActions
+     *                   to execute if condition is met
      */
-    public static PrototypeDefinition deserializeDefinition(String input)
+    public ConditionalAction(String condition, Action[] subActions)
     {
-        PrototypeLexer lexer = new PrototypeLexer(CharStreams.fromString(input));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
-
-        return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
+        this.condition = condition;
+        this.subActions = Arrays.copyOf(subActions, subActions.length);
     }
+
+    @Override
+    public void apply(PrototypeContext context, JsonNode parentNode)
+    {
+        if (context.has(condition))
+            for (Action action : subActions)
+                action.apply(context, parentNode);
+    }
+
 }

@@ -23,17 +23,16 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
+import com.github.cleverelephant.prototype.PrototypeContext;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 @SuppressWarnings({ "javadoc", "static-method" })
 class DefinitionDeserializerTest
@@ -42,32 +41,34 @@ class DefinitionDeserializerTest
     @Test
     void testAddDefinition() throws JsonMappingException, JsonProcessingException
     {
-        String data = """
-                  "com.github.cleverelephant.prototypetest.TestPrototype" : {
-                  "a" : "a",
-                  "b" : 1,
-                  "c" : true,
-                  "array" : [ "first", "second" ],
-                  "doubleValue" : 3.141592,
-                  "generic" : [ {
-                     "x" : 1,
-                     "y" : "first"
-                  }, {
-                     "x" : 2,
-                     "y" : "second"
-                  } ]
+        String definition = """
+                class "com.github.cleverelephant.prototypetest.TestPrototype"
+                add "a": "a"
+                add "b": 3.14
+                add "array": [ "first", "second" ]
+                add "object": {
+                  "a": 1,
+                  "b": false
                 }
-                              """;
-        String definition = "add " + data;
-        String result = "{" + data + "}";
+                """;
 
-        Action action = DefinitionDeserializer.deserializeDefinition(definition);
+        String expectedResult = """
+                {
+                  "com.github.cleverelephant.prototypetest.TestPrototype" : {
+                    "a": "a",
+                    "b": 3.14,
+                    "array": [ "first", "second" ],
+                    "object": {
+                      "a": 1,
+                      "b": false
+                    }
+                  }
+                }
+                """;
 
-        AddAction addAction = assertInstanceOf(AddAction.class, action, "wrong action type");
-        ObjectNode node = new ObjectNode(JsonNodeFactory.instance);
-        addAction.apply(node);
-
-        JsonNode expectedNode = new ObjectMapper().readTree(result);
+        PrototypeDefinition def = DefinitionDeserializer.deserializeDefinition(definition);
+        JsonNode node = def.getData(PrototypeContext.DEFAULT);
+        JsonNode expectedNode = new ObjectMapper().readTree(expectedResult);
 
         assertEquals(expectedNode, node, "wrong data");
     }

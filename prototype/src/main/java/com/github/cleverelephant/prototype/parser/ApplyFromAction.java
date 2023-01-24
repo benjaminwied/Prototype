@@ -23,40 +23,40 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
+import com.github.cleverelephant.prototype.PrototypeContext;
+import com.github.cleverelephant.prototype.PrototypeException;
+import com.github.cleverelephant.prototype.PrototypeRegistry;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Deserializes prototype definitions unsint ANTRL4.
+ * Applies all actions from a given prototype definition. Essentially enables inheritance.
  *
  * @author Benjamin Wied
  */
-public final class DefinitionDeserializer
+public class ApplyFromAction extends Action
 {
-    private DefinitionDeserializer()
-    {
-        throw new UnsupportedOperationException();
-    }
+    private final String prototypeSource;
 
     /**
-     * Deserializes a prototype definition from the given input.
-     *
-     * @param  input
-     *               definition data
-     *
-     * @return       action deserialized
+     * @param prototypeSource
+     *                        to apply actions from (e.g. parent prototype)
      */
-    public static PrototypeDefinition deserializeDefinition(String input)
+    public ApplyFromAction(String prototypeSource)
     {
-        PrototypeLexer lexer = new PrototypeLexer(CharStreams.fromString(input));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
-
-        return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
+        this.prototypeSource = prototypeSource;
     }
+
+    @Override
+    public void apply(PrototypeContext context, JsonNode parentNode)
+    {
+        PrototypeDefinition source = PrototypeRegistry.getDefinition(prototypeSource)
+                .orElseThrow(PrototypeException::new);
+
+        if (!(parentNode instanceof ObjectNode))
+            reportNotObject(parentNode);
+        source.apply(context, (ObjectNode) parentNode);
+    }
+
 }

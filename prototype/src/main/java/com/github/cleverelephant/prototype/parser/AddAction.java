@@ -23,25 +23,16 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.Prototype;
-import com.github.cleverelephant.prototype.PrototypeException;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Adds the specified property to the data, failing if an property with the same name already exists.
  *
  * @author Benjamin Wied
  */
-public class AddAction extends Action
+public class AddAction extends SetAction
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AddAction.class);
-
-    private final JsonNode data;
 
     /**
      * Creates a new AddAction using the specified key and data
@@ -53,35 +44,15 @@ public class AddAction extends Action
      */
     public AddAction(String key, JsonNode data)
     {
-        super(key);
-        this.data = data;
+        super(key, data);
     }
 
     @Override
-    public void apply(JsonNode parentNode)
+    protected void set(String key, ObjectNode parent, JsonNode data)
     {
-        if (!parentNode.isObject())
-            reportNotObject(parentNode);
-
-        ObjectNode objectNode = (ObjectNode) parentNode;
-        if (objectNode.has(key))
-            reportAlreadyDefined(parentNode);
-
-        objectNode.set(key, data.deepCopy());
-    }
-
-    private void reportAlreadyDefined(JsonNode parentNode)
-    {
-        LOGGER.atError().addMarker(Prototype.LOG_MARKER).addKeyValue("key", key).addKeyValue("data", data)
-                .addKeyValue("parentNode", parentNode).log("key {} is alreay defined in parentNode", key);
-        throw new PrototypeException("key " + key + " is already defined in parentNode");
-    }
-
-    private void reportNotObject(JsonNode parentNode)
-    {
-        LOGGER.atError().addMarker(Prototype.LOG_MARKER).addKeyValue("key", key).addKeyValue("data", data)
-                .addKeyValue("parentNode", parentNode).log("parentNode of AddAction must be an ObjectNode");
-        throw new IllegalArgumentException("parentNode of AddAction must be an object");
+        if (parent.has(key))
+            reportAlreadyDefined(key, parent);
+        parent.set(key, data);
     }
 
 }

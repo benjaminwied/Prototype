@@ -23,40 +23,37 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
-
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Deserializes prototype definitions unsint ANTRL4.
+ * Replaces the specified property to the data, failing if an property with the same name does not exists.
  *
  * @author Benjamin Wied
  */
-public final class DefinitionDeserializer
+public class ReplaceAction extends SetAction
 {
-    private DefinitionDeserializer()
-    {
-        throw new UnsupportedOperationException();
-    }
 
     /**
-     * Deserializes a prototype definition from the given input.
+     * Creates a new ReplaceAction using the specified key and data
      *
-     * @param  input
-     *               definition data
-     *
-     * @return       action deserialized
+     * @param key
+     *             property name
+     * @param data
+     *             property value
      */
-    public static PrototypeDefinition deserializeDefinition(String input)
+    public ReplaceAction(String key, JsonNode data)
     {
-        PrototypeLexer lexer = new PrototypeLexer(CharStreams.fromString(input));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
-
-        return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
+        super(key, data);
     }
+
+    @Override
+    protected void set(String key, ObjectNode parent, JsonNode data)
+    {
+        if (!parent.has(key))
+            reportNotDefined(key, parent);
+
+        parent.set(key, data.deepCopy());
+    }
+
 }

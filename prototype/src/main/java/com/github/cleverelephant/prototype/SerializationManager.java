@@ -23,8 +23,8 @@
  */
 package com.github.cleverelephant.prototype;
 
-import com.github.cleverelephant.prototype.parser.Action;
 import com.github.cleverelephant.prototype.parser.DefinitionDeserializer;
+import com.github.cleverelephant.prototype.parser.PrototypeDefinition;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -91,8 +91,9 @@ public final class SerializationManager
      *
      * @see                         PrototypeManager#loadPrototypes(Path, ExecutorService)
      */
-    public static void loadGameData(Path path, BiConsumer<String, Action> consumer, ExecutorService loadingPool)
-            throws IOException
+    public static void loadGameData(
+            Path path, BiConsumer<String, PrototypeDefinition> consumer, ExecutorService loadingPool
+    ) throws IOException
     {
         Objects.requireNonNull(path, "path must not be null");
         Objects.requireNonNull(consumer, "consumer must not be null");
@@ -145,7 +146,7 @@ public final class SerializationManager
     }
 
     private static void loadGameDataFromDirectory(
-            Path path, BiConsumer<String, Action> consumer, ExecutorService loadingPool
+            Path path, BiConsumer<String, PrototypeDefinition> consumer, ExecutorService loadingPool
     ) throws IOException
     {
         Set<Future<?>> futures = new HashSet<>();
@@ -181,7 +182,9 @@ public final class SerializationManager
         return path.getFileName().toString().endsWith(".json");
     }
 
-    private static void loadGameDataFromFile(Path path, Path relativePath, BiConsumer<String, Action> consumer)
+    private static void loadGameDataFromFile(
+            Path path, Path relativePath, BiConsumer<String, PrototypeDefinition> consumer
+    )
     {
         if (!isFileValid(path)) {
             LOGGER.atWarn().addMarker(Prototype.LOG_MARKER).log("skipping invalid file {}", compressLoggingPath(path));
@@ -193,7 +196,7 @@ public final class SerializationManager
                     .log("loading game data from path {}", compressLoggingPath(path));
 
             String name = prototypeNameFromPath(relativePath);
-            Action action = DefinitionDeserializer.deserializeDefinition(Files.readString(path));
+            PrototypeDefinition action = DefinitionDeserializer.deserializeDefinition(Files.readString(path));
             consumer.accept(name, action);
         } catch (IOException e) {
             LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e)

@@ -23,40 +23,48 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeLexer;
-import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser;
+import com.github.cleverelephant.prototype.PrototypeContext;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Deserializes prototype definitions unsint ANTRL4.
+ * Renames any property into another, doing nothing if no source property exists, and failing of the target property
+ * already exists.
  *
  * @author Benjamin Wied
  */
-public final class DefinitionDeserializer
+public class RenameAction extends KeyAction
 {
-    private DefinitionDeserializer()
-    {
-        throw new UnsupportedOperationException();
-    }
+    private final String target;
 
     /**
-     * Deserializes a prototype definition from the given input.
+     * Creates a new AddAction using the specified key and data
      *
-     * @param  input
-     *               definition data
-     *
-     * @return       action deserialized
+     * @param source
+     *               source property name
+     * @param target
+     *               target property name
      */
-    public static PrototypeDefinition deserializeDefinition(String input)
+    public RenameAction(String source, String target)
     {
-        PrototypeLexer lexer = new PrototypeLexer(CharStreams.fromString(input));
-
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        PrototypeParser parser = new PrototypeParser(tokens);
-        //        parser.setErrorHandler(new BailErrorStrategy());
-
-        return new ActionGeneratingVisitor().visitPrototype(parser.prototype());
+        super(source);
+        this.target = target;
     }
+
+    @Override
+    public void apply(PrototypeContext context, JsonNode parentNode)
+    {
+        if (!parentNode.isObject())
+            reportNotObject(parentNode);
+
+        ObjectNode objectNode = (ObjectNode) parentNode;
+
+        if (objectNode.has(key)) {
+            if (objectNode.has(target))
+                reportAlreadyDefined(target, parentNode);
+            objectNode.set(target, objectNode.remove(key));
+        }
+    }
+
 }
