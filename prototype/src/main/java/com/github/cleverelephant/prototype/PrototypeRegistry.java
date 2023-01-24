@@ -32,8 +32,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
 /**
  * Maintains a list of all registered {@link PrototypeDefinition PrototypeDefinitions}.
  *
@@ -114,7 +112,7 @@ public final class PrototypeRegistry
             return Optional.of((P) PROTOTYPES.get(name));
 
         Optional<P> opt = Optional.ofNullable(DEFINITIONS.get(name)).map(def -> def.getData(currentContext))
-                .map(data -> SerializationManager.deserializePrototype(data, name, new TypeReference<P>() {}));
+                .map(data -> SerializationManager.deserializePrototype(data, name));
         if (opt.isPresent())
             PROTOTYPES.put(name, opt.get());
         return opt;

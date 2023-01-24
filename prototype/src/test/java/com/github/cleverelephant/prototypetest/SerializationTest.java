@@ -34,7 +34,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -59,14 +58,13 @@ class SerializationTest
         Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
         try (InputStream in = Files.newInputStream(dataPath)) {
             JsonNode node = objectMapper.readTree(in);
-            proto = SerializationManager.deserializePrototype(node, "test", new TypeReference<TestPrototype>() {});
+            proto = SerializationManager.deserializePrototype(node, "test");
         }
 
         dataPath = Path.of(SerializationTest.class.getResource("wrongDefault.json").toURI());
         try (InputStream in = Files.newInputStream(dataPath)) {
             JsonNode node = objectMapper.readTree(in);
-            wrongDefaultPrototype = SerializationManager
-                    .deserializePrototype(node, "wrongDefault", new TypeReference<WrongDefaultPrototype>() {});
+            wrongDefaultPrototype = SerializationManager.deserializePrototype(node, "wrongDefault");
         }
     }
 

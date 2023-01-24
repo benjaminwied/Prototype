@@ -41,10 +41,11 @@ import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,8 +120,6 @@ public final class SerializationManager
      *                              data source
      * @param  name
      *                              prototype name
-     * @param  clazz
-     *                              prototype class
      *
      * @return                      the deserialized prototype
      *
@@ -130,17 +129,18 @@ public final class SerializationManager
      * @see                         #loadGameData(Path, BiConsumer, ExecutorService)
      * @see                         #prototypeNameFromPath(Path)
      */
-    public static <T extends Prototype<?>> T deserializePrototype(JsonNode data, String name, TypeReference<T> clazz)
+    public static <T extends Prototype<?>> T deserializePrototype(JsonNode data, String name)
     {
         try {
             if (data == null)
                 throw new NullPointerException("data must not be null");
             Objects.requireNonNull(name, "name must not be null");
-            Objects.requireNonNull(clazz, "clazz must not be null");
 
             InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
-            return OBJECT_MAPPER.reader(injectableValues).forType(clazz).readValue(data);
-        } catch (IOException e) {
+            return OBJECT_MAPPER.reader(injectableValues).forType(Prototype.class).readValue(data);
+        } catch (Exception e) {
+            LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e).addKeyValue("json", data)
+                    .log("failed to deserialize prototype {}", name);
             throw new PrototypeException("failed to deserialize prototype", e);
         }
     }
@@ -179,7 +179,7 @@ public final class SerializationManager
 
     private static boolean isFileValid(Path path)
     {
-        return path.getFileName().toString().endsWith(".json");
+        return path.getFileName().toString().endsWith(".prototype");
     }
 
     private static void loadGameDataFromFile(
@@ -198,7 +198,7 @@ public final class SerializationManager
             String name = prototypeNameFromPath(relativePath);
             PrototypeDefinition action = DefinitionDeserializer.deserializeDefinition(Files.readString(path));
             consumer.accept(name, action);
-        } catch (IOException e) {
+        } catch (IOException | ParseCancellationException e) {
             LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e)
                     .log("failed to load game data from path {}", path);
             throw new PrototypeException("failed to load game data", e);
