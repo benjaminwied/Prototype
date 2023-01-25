@@ -69,20 +69,20 @@ class PrototypeReferenceTest
     @Test
     void testAbsolutePath()
     {
-        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "/path/to/my/proto");
+        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "path/to/my/proto");
         assertEquals("path/to/my/proto", reference.getTargetPrototypeName(), "wrong absolte path");
     }
 
     @Test
     void testRelativePath()
     {
-        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "path/to/my/proto");
+        PrototypeReference<?, ?> reference = new PrototypeReference<>("abc", "/path/to/my/proto");
         assertEquals("path/to/my/proto", reference.getTargetPrototypeName(), "wrong relative path");
 
-        reference = new PrototypeReference<>("folder/abc", "path/to/my/proto");
+        reference = new PrototypeReference<>("folder/abc", "/path/to/my/proto");
         assertEquals("folder/path/to/my/proto", reference.getTargetPrototypeName(), "wrong relative path");
 
-        reference = new PrototypeReference<>("folder/abc", "proto");
+        reference = new PrototypeReference<>("folder/abc", "/proto");
         assertEquals("folder/proto", reference.getTargetPrototypeName(), "wrong relative path");
     }
 
@@ -102,7 +102,7 @@ class PrototypeReferenceTest
     @Test
     void testDeserialization() throws JsonMappingException, JsonProcessingException
     {
-        String json = "\"path/to/my/proto\"";
+        String json = "\"/path/to/my/proto\"";
         InjectableValues injectableValues = new InjectableValues.Std().addValue("name", "folder/abc");
         PrototypeReference<?,
                 ?> reference = OBJECT_MAPPER.reader(injectableValues).forType(PrototypeReference.class).readValue(json);

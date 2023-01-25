@@ -55,11 +55,11 @@ public final class PrototypeReference<T, P extends Prototype<T>>
      * absolute prototype name. If not, the absolute prototype name is constructed using the folder of
      * {@code sourcePrototypeName}.
      * <ul>
-     * <li>Similar to {@link Class#getResource(String)}, if {@code relativeTargetName} starts with '/', it is considered
-     * as the absolute prototype name.
+     * <li>If {@code relativeTargetName} starts with '/', it is considered to be relative to
+     * {@code sourcePrototypeName}'s parent.
      * <li>If {@code relativeTargetName} starts with '#', it is considered to be relative to
      * {@code sourcePrototypeName}.
-     * <li>If not, it is considered to be relative to {@code sourcePrototypeName}'s parent.
+     * <li>If not, it is considered as the absolute prototype name.
      * </ul>
      *
      * @param  sourcePrototypeName
@@ -83,10 +83,10 @@ public final class PrototypeReference<T, P extends Prototype<T>>
         Objects.requireNonNull(relativeTargetName, "relativeTargetName must not be null");
         PrototypeManager.checkName(sourcePrototypeName);
 
-        if (relativeTargetName.startsWith("/"))
-            targetPrototypeName = compressPath(relativeTargetName.substring(1));
-        else if (relativeTargetName.startsWith("#"))
+        if (relativeTargetName.startsWith("#"))
             targetPrototypeName = compressPath(sourcePrototypeName + "/" + relativeTargetName.substring(1));
+        else if (!relativeTargetName.startsWith("/"))
+            targetPrototypeName = compressPath(relativeTargetName);
         else {
             String prototypePackage;
             if (sourcePrototypeName.contains("/"))
@@ -94,7 +94,7 @@ public final class PrototypeReference<T, P extends Prototype<T>>
             else
                 prototypePackage = "";
 
-            targetPrototypeName = compressPath(prototypePackage + relativeTargetName);
+            targetPrototypeName = compressPath(prototypePackage + relativeTargetName.substring(1));
         }
 
         PrototypeManager.checkName(targetPrototypeName);
