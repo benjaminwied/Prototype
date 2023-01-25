@@ -63,6 +63,7 @@ public final class PrototypeRegistry
     public static synchronized void clear()
     {
         DEFINITIONS.clear();
+        clearCache();
     }
 
     /**
