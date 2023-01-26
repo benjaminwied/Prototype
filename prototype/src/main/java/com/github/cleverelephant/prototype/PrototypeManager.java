@@ -72,8 +72,8 @@ public final class PrototypeManager
     {
         return Collections.unmodifiableSet(
                 new HashSet<>(
-                        PrototypeRegistry.keys().stream().map(PrototypeRegistry::get).map(Optional::orElseThrow)
-                                .toList()
+                        PrototypeRegistry.keys().stream().map(PrototypeRegistry::get).filter(Optional::isPresent)
+                                .map(Optional::get).toList()
                 )
         );
     }

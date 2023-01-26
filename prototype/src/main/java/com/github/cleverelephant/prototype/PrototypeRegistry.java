@@ -112,7 +112,8 @@ public final class PrototypeRegistry
         if (PROTOTYPES.containsKey(name))
             return Optional.of((P) PROTOTYPES.get(name));
 
-        Optional<P> opt = Optional.ofNullable(DEFINITIONS.get(name)).map(def -> def.getData(currentContext))
+        Optional<P> opt = Optional.ofNullable(DEFINITIONS.get(name)).filter(def -> def.getPrototypeClass() != null)
+                .map(def -> def.getData(currentContext))
                 .map(data -> SerializationManager.deserializePrototype(data, name));
         if (opt.isPresent())
             PROTOTYPES.put(name, opt.get());

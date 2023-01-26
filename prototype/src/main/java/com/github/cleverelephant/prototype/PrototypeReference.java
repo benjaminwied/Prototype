@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.annotation.JacksonInject;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.OptBoolean;
 
 /**
@@ -74,6 +75,7 @@ public final class PrototypeReference<T, P extends Prototype<T>>
      *                                  prototype is not a valid prototype name (as defined by
      *                                  {@link PrototypeManager#checkName(String)}.
      */
+    @JsonCreator
     public PrototypeReference(
             @JacksonInject(useInput = OptBoolean.FALSE, value = "name") String sourcePrototypeName,
             String relativeTargetName
@@ -98,6 +100,14 @@ public final class PrototypeReference<T, P extends Prototype<T>>
         }
 
         PrototypeManager.checkName(targetPrototypeName);
+    }
+
+    public PrototypeReference(String name)
+    {
+        Objects.requireNonNull(name, "relativeTargetName must not be null");
+        PrototypeManager.checkName(name);
+
+        targetPrototypeName = name;
     }
 
     private static String compressPath(String path)
