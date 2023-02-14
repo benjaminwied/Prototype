@@ -30,6 +30,7 @@ import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ActionCo
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.AddActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ApplyFromActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ArrayContext;
+import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ConditionalActionContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ContentContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.KeyValueContext;
 import com.github.cleverelephant.prototype.parser.antlr.PrototypeParser.ModifyActionContext;
@@ -76,6 +77,15 @@ class ActionGeneratingVisitor extends PrototypeBaseVisitor<Object>
 
         Action[] actions = visitContent(ctxt.content());
         return new PrototypeDefinition(clazz, actions);
+    }
+
+    @Override
+    public Object visitConditionalAction(ConditionalActionContext ctxt)
+    {
+        String condition = string(ctxt.STRINGLITERAL().getText());
+        Action[] actions = ctxt.action().stream().map(this::visitAction).toArray(Action[]::new);
+
+        return new ConditionalAction(condition, actions);
     }
 
     @Override
