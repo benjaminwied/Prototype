@@ -43,7 +43,7 @@ public final class PrototypeContext
      * @param context
      *                to activate
      */
-    public static void activateConent(Map<String, Object> context)
+    public static void activateContext(Map<String, Object> context)
     {
         currentContext = Collections.unmodifiableMap(context);
         isContextLive = false;

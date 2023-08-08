@@ -29,13 +29,13 @@ class ContextTest
     {
         Map<String, Object> context = new HashMap<>();
         context.put("foo", "bar");
-        PrototypeContext.activateConent(context);
+        PrototypeContext.activateContext(context);
     }
 
     @AfterEach
     void tearDown() throws Exception
     {
-        PrototypeContext.activateConent(Collections.emptyMap());
+        PrototypeContext.activateContext(Collections.emptyMap());
     }
 
     @Test
