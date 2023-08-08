@@ -196,7 +196,7 @@ public final class SerializationManager
 
     private static boolean isFileValid(Path path)
     {
-        return path.getFileName().toString().endsWith(".prototype");
+        return path.getFileName().toString().endsWith(".lua");
     }
 
     private static void loadGameDataFromFile(Path path, Path relativePath, BiConsumer<String, String> consumer)
