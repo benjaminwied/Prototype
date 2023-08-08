@@ -1,0 +1,11 @@
+{
+  "com.github.cleverelephant.prototypetest.TestPrototype" : {
+    "a" : "a",
+    "b" : 3.14,
+    "array" : [ "first", "second" ],
+    "object" : {
+      "a" : 1,
+      "b" : false
+    }
+  }
+}

@@ -28,13 +28,11 @@ import com.github.cleverelephant.prototype.PrototypeException;
 import com.github.cleverelephant.prototype.SerializationManager;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.AfterAll;
@@ -56,16 +54,12 @@ class SerializationTest
         objectMapper = new ObjectMapper();
 
         Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
-        try (InputStream in = Files.newInputStream(dataPath)) {
-            JsonNode node = objectMapper.readTree(in);
-            proto = SerializationManager.deserializePrototype(node, "test");
-        }
+        String content = Files.readString(dataPath);
+        proto = SerializationManager.deserializePrototype("test", content);
 
         dataPath = Path.of(SerializationTest.class.getResource("wrongDefault.json").toURI());
-        try (InputStream in = Files.newInputStream(dataPath)) {
-            JsonNode node = objectMapper.readTree(in);
-            wrongDefaultPrototype = SerializationManager.deserializePrototype(node, "wrongDefault");
-        }
+        content = Files.readString(dataPath);
+        wrongDefaultPrototype = SerializationManager.deserializePrototype("wrongDefault", content);
     }
 
     @AfterAll

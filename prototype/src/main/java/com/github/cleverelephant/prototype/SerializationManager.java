@@ -23,9 +23,6 @@
  */
 package com.github.cleverelephant.prototype;
 
-import com.github.cleverelephant.prototype.parser.DefinitionDeserializer;
-import com.github.cleverelephant.prototype.parser.PrototypeDefinition;
-
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -40,12 +37,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.antlr.v4.runtime.misc.ParseCancellationException;
+import com.fasterxml.jackson.databind.ObjectReader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,9 +90,8 @@ public final class SerializationManager
      *
      * @see                         PrototypeManager#loadPrototypes(Path, ExecutorService)
      */
-    public static void loadGameData(
-            Path path, BiConsumer<String, PrototypeDefinition> consumer, ExecutorService loadingPool
-    ) throws IOException
+    public static void loadGameData(Path path, BiConsumer<String, String> consumer, ExecutorService loadingPool)
+            throws IOException
     {
         Objects.requireNonNull(path, "path must not be null");
         Objects.requireNonNull(consumer, "consumer must not be null");
@@ -108,6 +105,32 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
+    public static <T extends Prototype<?>> T deserializePrototype(String name, JsonNode data)
+    {
+        return deserializePrototype(name, reader -> {
+            try {
+                return reader.readValue(data);
+            } catch (IOException e) {
+                LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e).addKeyValue("json", data)
+                        .log("failed to deserialize prototype {}", name);
+                throw new PrototypeException("failed to deserialize prototype", e);
+            }
+        });
+    }
+
+    public static <T extends Prototype<?>> T deserializePrototype(String name, String data)
+    {
+        return deserializePrototype(name, reader -> {
+            try {
+                return reader.readValue(data);
+            } catch (JsonProcessingException e) {
+                LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e).addKeyValue("json", data)
+                        .log("failed to deserialize prototype {}", name);
+                throw new PrototypeException("failed to deserialize prototype", e);
+            }
+        });
+    }
+
     /**
      * Deserializes a single prototype given its name and its class.<br>
      * <br>
@@ -116,7 +139,7 @@ public final class SerializationManager
      *
      * @param  <T>
      *                              prototype generic type
-     * @param  data
+     * @param  generator
      *                              data source
      * @param  name
      *                              prototype name
@@ -129,24 +152,18 @@ public final class SerializationManager
      * @see                         #loadGameData(Path, BiConsumer, ExecutorService)
      * @see                         #prototypeNameFromPath(Path)
      */
-    public static <T extends Prototype<?>> T deserializePrototype(JsonNode data, String name)
+    private static <T extends Prototype<?>> T deserializePrototype(String name, Function<ObjectReader, T> generator)
     {
-        try {
-            if (data == null)
-                throw new NullPointerException("data must not be null");
-            Objects.requireNonNull(name, "name must not be null");
+        if (generator == null)
+            throw new NullPointerException("generator must not be null");
+        Objects.requireNonNull(name, "name must not be null");
 
-            InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
-            return OBJECT_MAPPER.reader(injectableValues).forType(Prototype.class).readValue(data);
-        } catch (Exception e) {
-            LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e).addKeyValue("json", data)
-                    .log("failed to deserialize prototype {}", name);
-            throw new PrototypeException("failed to deserialize prototype", e);
-        }
+        InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
+        return generator.apply(OBJECT_MAPPER.reader(injectableValues).forType(Prototype.class));
     }
 
     private static void loadGameDataFromDirectory(
-            Path path, BiConsumer<String, PrototypeDefinition> consumer, ExecutorService loadingPool
+            Path path, BiConsumer<String, String> consumer, ExecutorService loadingPool
     ) throws IOException
     {
         Set<Future<?>> futures = new HashSet<>();
@@ -182,9 +199,7 @@ public final class SerializationManager
         return path.getFileName().toString().endsWith(".prototype");
     }
 
-    private static void loadGameDataFromFile(
-            Path path, Path relativePath, BiConsumer<String, PrototypeDefinition> consumer
-    )
+    private static void loadGameDataFromFile(Path path, Path relativePath, BiConsumer<String, String> consumer)
     {
         if (!isFileValid(path)) {
             LOGGER.atWarn().addMarker(Prototype.LOG_MARKER).log("skipping invalid file {}", compressLoggingPath(path));
@@ -196,9 +211,9 @@ public final class SerializationManager
                     .log("loading game data from path {}", compressLoggingPath(path));
 
             String name = prototypeNameFromPath(relativePath);
-            PrototypeDefinition action = DefinitionDeserializer.deserializeDefinition(Files.readString(path));
-            consumer.accept(name, action);
-        } catch (IOException | ParseCancellationException e) {
+            String content = Files.readString(path);
+            consumer.accept(name, content);
+        } catch (IOException e) {
             LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e)
                     .log("failed to load game data from path {}", path);
             throw new PrototypeException("failed to load game data", e);

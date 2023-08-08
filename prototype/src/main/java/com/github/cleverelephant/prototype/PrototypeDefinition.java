@@ -21,50 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.cleverelephant.prototype.parser;
+package com.github.cleverelephant.prototype;
 
-import com.github.cleverelephant.prototype.PrototypeContext;
+import java.util.LinkedList;
+import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import javax.script.CompiledScript;
 
 /**
- * Renames any property into another, doing nothing if no source property exists, and failing of the target property
- * already exists.
+ * Maintains an action-chain and creates the final json-data for prototype definitions.
  *
  * @author Benjamin Wied
  */
-public class RenameAction extends KeyAction
+public class PrototypeDefinition
 {
-    private final String target;
+    private List<CompiledScript> scripts;
 
     /**
-     * Creates a new AddAction using the specified key and data
-     *
-     * @param source
-     *               source property name
-     * @param target
-     *               target property name
+     * Creates a new empty {@code PrototypeDefinition}.
      */
-    public RenameAction(String source, String target)
+    public PrototypeDefinition()
     {
-        super(source);
-        this.target = target;
+        scripts = new LinkedList<>();
     }
 
-    @Override
-    public void apply(PrototypeContext context, JsonNode parentNode)
+    /**
+     * @return the scripts that this prototype definition uses
+     */
+    public List<CompiledScript> getScripts()
     {
-        if (!parentNode.isObject())
-            reportNotObject(parentNode);
-
-        ObjectNode objectNode = (ObjectNode) parentNode;
-
-        if (objectNode.has(key)) {
-            if (objectNode.has(target))
-                reportAlreadyDefined(target, parentNode);
-            objectNode.set(target, objectNode.remove(key));
-        }
+        return scripts;
     }
-
 }

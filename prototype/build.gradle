@@ -1,35 +1,12 @@
-plugins {
-    id "antlr"
-}
 
 dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:2.15.2"
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.15.2"
     implementation "org.ow2.asm:asm:9.5"
+    implementation "org.luaj:luaj-jse:3.0.1"
     
     implementation "org.slf4j:slf4j-api:2.0.7"
     
     testImplementation "org.junit.jupiter:junit-jupiter-engine:5.10.0"
     testImplementation "org.slf4j:slf4j-jdk14:2.0.7"
-    
-    antlr "org.antlr:antlr4:4.13.0"
 }
-
-license {
-    exclude "**/com/github/cleverelephant/prototype/parser/antlr/**"
-}
-
-generateGrammarSource {
-    arguments += ["-package", "com.github.cleverelephant.prototype.parser.antlr", "-visitor", "-no-listener"]
-}
-
-sourceSets {
-    generated {
-        java.srcDir "generated-src/antlr/main/"
-    }
-}
-
-licenseMain.dependsOn generateGrammarSource
-compileJava.dependsOn generateGrammarSource
-compileJava.source sourceSets.generated.java, sourceSets.main.java
-

@@ -351,7 +351,8 @@ public final class PrototypeManager
      */
     public static void loadPrototypes(Path path, ExecutorService executor) throws IOException
     {
-        SerializationManager
-                .loadGameData(Objects.requireNonNull(path, "path" + NULL), PrototypeRegistry::register, executor);
+        SerializationManager.loadGameData(
+                Objects.requireNonNull(path, "path" + NULL), LuaInterpreter.INSTANCE::updatePrototype, executor
+        );
     }
 }

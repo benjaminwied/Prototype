@@ -23,68 +23,63 @@
  */
 package com.github.cleverelephant.prototype;
 
-import com.github.cleverelephant.prototype.parser.Action;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
 
 /**
- * Context in which prototypes are processed. Some {@link Action actions} may change behavior depending on the currently
- * active context.
+ * Context in which prototypes are processed.
  *
  * @author Benjamin Wied
- *
- * @see    PrototypeRegistry#activateContext(PrototypeContext)
  */
-public interface PrototypeContext
+public final class PrototypeContext
 {
-    /**
-     * Default context, containing no keys. It will be active by default.
-     */
-    PrototypeContext DEFAULT = of();
+    private static Map<String, Object> currentContext = Collections.emptyMap();
+    private static boolean isContextLive = true;
 
     /**
-     * Checks if this context contains a key with the specified name.
+     * Activates a context to generate prototypes. <em>Note: for this to take effect, all prototypes need to be
+     * reloaded.</em>
      *
-     * @param  key
-     *             to check
-     *
-     * @return     true if and only if this context contains a key with the specified name, false otherwise
+     * @param context
+     *                to activate
      */
-    boolean has(String key);
-
-    /**
-     * Creates a {@code PrototypeContext} that contains exactly the given keys.
-     *
-     * @param  keys
-     *              will be contained by the returned context
-     *
-     * @return      a {@code PrototypeContext} that contains exactly the given keys
-     */
-    static PrototypeContext of(String... keys)
+    public static void activateConent(Map<String, Object> context)
     {
-        return new DefaultPrototypeContext(new HashSet<>(Arrays.asList(keys)));
+        currentContext = Collections.unmodifiableMap(context);
+        isContextLive = false;
     }
 
     /**
-     * <b>Do not instantiate directly, use {@link PrototypeContext#of(String...)}</b>
+     * Returns the current context as an immutable Map.
      *
-     * @author Benjamin Wied
+     * @return the current context as an immutable Map.
      */
-    final class DefaultPrototypeContext implements PrototypeContext
+    public static Map<String, Object> getCurrentContext()
     {
-        private final Set<String> keys;
+        return currentContext;
+    }
 
-        private DefaultPrototypeContext(Set<String> keys)
-        {
-            this.keys = keys;
-        }
+    /**
+     * Returns true if the context is live, false otherwise. To make an active context live, all prototypes need to be
+     * reloaded.
+     *
+     * @return true if the context is live
+     */
+    public static boolean isContextLive()
+    {
+        return isContextLive;
+    }
 
-        @Override
-        public boolean has(String key)
-        {
-            return keys.contains(key);
-        }
+    /**
+     * Sets the live flag of the context.
+     */
+    static void makeContextLive()
+    {
+        isContextLive = true;
+    }
+
+    private PrototypeContext()
+    {
+        /* do nothing */
     }
 }

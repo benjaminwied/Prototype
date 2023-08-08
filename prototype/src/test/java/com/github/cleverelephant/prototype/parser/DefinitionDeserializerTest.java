@@ -23,10 +23,14 @@
  */
 package com.github.cleverelephant.prototype.parser;
 
-import com.github.cleverelephant.prototype.PrototypeContext;
+import com.github.cleverelephant.prototype.LuaInterpreter;
+import com.github.cleverelephant.prototype.PrototypeDefinition;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -34,41 +38,21 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SuppressWarnings({ "javadoc", "static-method" })
+@SuppressWarnings({ "javadoc" })
 class DefinitionDeserializerTest
 {
 
     @Test
-    void testAddDefinition() throws JsonMappingException, JsonProcessingException
+    void testAddDefinition() throws IOException, URISyntaxException
     {
-        String definition = """
-                class "com.github.cleverelephant.prototypetest.TestPrototype"
-                add "a": "a"
-                add "b": 3.14
-                add "array": [ "first", "second" ]
-                add "object": {
-                  "a": 1,
-                  "b": false
-                }
-                """;
+        String json = Files.readString(Path.of(getClass().getResource("test.json").toURI()));
+        String lua = Files.readString(Path.of(getClass().getResource("test.lua").toURI()));
 
-        String expectedResult = """
-                {
-                  "com.github.cleverelephant.prototypetest.TestPrototype" : {
-                    "a": "a",
-                    "b": 3.14,
-                    "array": [ "first", "second" ],
-                    "object": {
-                      "a": 1,
-                      "b": false
-                    }
-                  }
-                }
-                """;
-
-        PrototypeDefinition def = DefinitionDeserializer.deserializeDefinition(definition);
-        JsonNode node = def.getData(PrototypeContext.DEFAULT);
-        JsonNode expectedNode = new ObjectMapper().readTree(expectedResult);
+        PrototypeDefinition def = new PrototypeDefinition();
+        LuaInterpreter.INSTANCE.updatePrototype(def, lua);
+        JsonNode node = LuaInterpreter.INSTANCE.evalPrototypeDefinition(def);
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode expectedNode = mapper.readTree(json);
 
         assertEquals(expectedNode, node, "wrong data");
     }
