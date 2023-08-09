@@ -23,8 +23,7 @@
  */
 package com.github.cleverelephant.prototype;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Objects;
 
@@ -69,7 +68,7 @@ public final class IntegrityChecker
         boolean failure = false;
 
         for (Prototype<?> prototype : PrototypeManager.allPrototypes()) {
-            LOGGER.trace(Prototype.LOG_MARKER, "Verifying integrity of prototype {}", prototype.name());
+            LOGGER.trace(Prototype.LOG_MARKER, "Verifying integrity of prototype {}", prototype.name);
 
             failure = verifyIntegrity(prototype) || failure;
         }
@@ -106,47 +105,33 @@ public final class IntegrityChecker
         boolean failure = false;
 
         try {
-            for (Method method : prototype.getClass().getMethods()) {
-                if (!method.getReturnType().equals(PrototypeReference.class))
+            for (Field field : prototype.getClass().getFields()) {
+                if (!field.getType().equals(PrototypeReference.class))
                     continue;
 
-                PrototypeReference<?, ?> reference = (PrototypeReference<?, ?>) method.invoke(prototype);
+                PrototypeReference<?, ?> reference = (PrototypeReference<?, ?>) field.get(prototype);
                 if (reference == null)
-                    failure = verifyNullReference(prototype.name(), method) || failure;
+                    failure = verifyNullReference(field) || failure;
                 else if (reference.getOptionalPrototype().isEmpty()) {
                     LOGGER.error(
                             Prototype.LOG_MARKER,
-                            "Integrity of prototype {} invalid: no referenced prototype found: {}", prototype.name(),
+                            "Integrity of prototype {} invalid: no referenced prototype found: {}", prototype.name,
                             reference.getTargetPrototypeName()
                     );
                     failure = true;
                 }
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            LOGGER.error(Prototype.LOG_MARKER, "Failed to verify integrity of prototype {}", prototype.name(), e);
+        } catch (IllegalAccessException e) {
+            LOGGER.error(Prototype.LOG_MARKER, "Failed to verify integrity of prototype {}", prototype.name, e);
             failure = true;
         }
 
         return failure;
     }
 
-    private static boolean verifyNullReference(String prototypeName, Method method)
+    private static boolean verifyNullReference(Field field)
     {
-        if (method.isAnnotationPresent(OptionalReference.class) || method.getName().startsWith("$"))
-            return false;
-
-        try {
-            method.getDeclaringClass().getMethod("$" + method.getName());
-            return false;
-        } catch (NoSuchMethodException | SecurityException e) {
-            /* Can ignore e here */
-            LOGGER.error(
-                    Prototype.LOG_MARKER,
-                    "Integrity of prototype {} invalid: PrototypeReference is null for property {}", prototypeName,
-                    method.getName()
-            );
-            return true;
-        }
+        return !field.isAnnotationPresent(OptionalReference.class);
     }
 
     /**
@@ -163,81 +148,28 @@ public final class IntegrityChecker
 
         boolean failure = false;
 
-        for (Method method : prototype.getClass().getMethods()) {
-            if (Modifier.isStatic(method.getModifiers()) || !method.canAccess(prototype)
-                    || !Modifier.isPublic(method.getModifiers()) || method.getReturnType() == void.class
-                    || method.getParameterCount() != 0)
+        for (Field field : prototype.getClass().getFields()) {
+            if (Modifier.isStatic(field.getModifiers()) || !field.canAccess(prototype)
+                    || !Modifier.isPublic(field.getModifiers()))
                 continue;
 
-            failure = verifyMethodIntegrity(prototype, method) || failure;
+            failure = verifyFieldIntegrity(prototype, field) || failure;
         }
 
         return failure;
     }
 
-    private static boolean verifyMethodIntegrity(Prototype<?> prototype, Method method)
+    private static boolean verifyFieldIntegrity(Prototype<?> prototype, Field field)
     {
-        boolean failure = false;
-
-        if (method.getName().startsWith("$"))
-            failure = verifyExistingValues(method, prototype.getClass(), prototype.name());
-
-        if (Prototype.class.isAssignableFrom(method.getReturnType())) {
+        if (Prototype.class.isAssignableFrom(field.getType())) {
             LOGGER.error(
                     Prototype.LOG_MARKER,
-                    "Integrity of prototype {} invalid: prototype nesting not allowed (property {})", prototype.name(),
-                    method.getName()
+                    "Integrity of prototype {} invalid: prototype nesting not allowed (property {})", prototype.name,
+                    field.getName()
             );
-            failure = true;
+            return true;
         }
 
-        if (!failure)
-            try {
-                /* This will check for missing values */
-                method.invoke(prototype);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                Throwable x = e.getCause() != null ? e.getCause() : e;
-
-                if (prototype.name().startsWith("$"))
-                    LOGGER.error(
-                            Prototype.LOG_MARKER,
-                            "Integrity of prototype {} invalid: default value for property {} invalid",
-                            prototype.name(), method.getName(), x
-                    );
-                else
-                    LOGGER.error(
-                            Prototype.LOG_MARKER, "Integrity of prototype {} invalid: no default value for property {}",
-                            prototype.name(), method.getName(), x
-                    );
-                failure = true;
-            }
-
-        return failure;
-    }
-
-    private static boolean verifyExistingValues(Method method, Class<?> prototypeClass, String prototypeName)
-    {
-        boolean failure = false;
-
-        try {
-            Method m = prototypeClass.getMethod(method.getName().substring(1));
-            if (!method.getReturnType().equals(m.getReturnType())) {
-                failure = true;
-                LOGGER.error(
-                        Prototype.LOG_MARKER,
-                        "Integrity of prototype {} invalid: default value type {} does not math required value type {}",
-                        prototypeName, method.getReturnType(), m.getReturnType()
-                );
-            }
-        } catch (NoSuchMethodException | SecurityException e) {
-            failure = true;
-            LOGGER.error(
-                    Prototype.LOG_MARKER,
-                    "Integrity of prototype {} invalid: value method for default value {} does not exist",
-                    prototypeName, method.getName(), e
-            );
-        }
-
-        return failure;
+        return false;
     }
 }

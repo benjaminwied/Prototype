@@ -28,30 +28,27 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.OptBoolean;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 /**
- * Defines a prototype, which can later be build into a concrete type. Methods define properties.
+ * Defines a prototype, which can later be build into a concrete type.
  *
  * @author     Benjamin Wied
  *
  * @param  <T>
  *             type which is represented by this Prototype
  *
- * @see        PrototypeBuilder
  * @see        PrototypeManager
  */
-@JsonTypeInfo(use = Id.CUSTOM, include = As.WRAPPER_OBJECT)
-@JsonTypeIdResolver(PrototypeIdResolver.class)
-public interface Prototype<T>
+@JsonTypeInfo(use = Id.CLASS, include = As.WRAPPER_OBJECT)
+public abstract class Prototype<T>
 {
     /**
      * Public LOG_MARKER that is used to log events.
      */
-    Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
+    public static final Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
 
     /**
      * This is the identifier of this prototype. A prototype can be obtained by using its name in
@@ -59,9 +56,14 @@ public interface Prototype<T>
      * <br>
      * The name is computed from the path the prototype is loaded from, relative to the prototype root directory and
      * without any file extension.
-     *
-     * @return the name of this prototype
      */
     @JacksonInject(useInput = OptBoolean.FALSE, value = "name")
-    String name();
+    public String name;
+
+    /**
+     * Builds this prototype into a concrete type.
+     *
+     * @return the type built
+     */
+    public abstract T build();
 }

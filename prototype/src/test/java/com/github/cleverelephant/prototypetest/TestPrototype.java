@@ -31,24 +31,9 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings("javadoc")
-public interface TestPrototype extends Prototype<String>
+public class TestPrototype extends Prototype<String>
 {
-    @JsonProperty("a")
-    String a();
-    int b();
-    boolean c();
-    String d();
-    String[] array();
-    double doubleValue();
-    List<SimpleContainer> generic();
-    String missingDefault();
-
-    default String $d()
-    {
-        return "abc";
-    }
-
-    class SimpleContainer
+    public static class SimpleContainer
     {
         private int x;
         private String y;
@@ -63,19 +48,36 @@ public interface TestPrototype extends Prototype<String>
             this.y = y;
         }
 
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+                return true;
+            if (obj == null || getClass() != obj.getClass())
+                return false;
+            SimpleContainer other = (SimpleContainer) obj;
+            return x == other.x && Objects.equals(y, other.y);
+        }
+
         public int getX()
         {
             return x;
         }
 
-        public void setX(int x)
-        {
-            this.x = x;
-        }
-
         public String getY()
         {
             return y;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(x, y);
+        }
+
+        public void setX(int x)
+        {
+            this.x = x;
         }
 
         public void setY(String y)
@@ -91,22 +93,20 @@ public interface TestPrototype extends Prototype<String>
             return builder.toString();
         }
 
-        @Override
-        public int hashCode()
-        {
-            return Objects.hash(x, y);
-        }
+    }
 
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (this == obj)
-                return true;
-            if (obj == null || getClass() != obj.getClass())
-                return false;
-            SimpleContainer other = (SimpleContainer) obj;
-            return x == other.x && Objects.equals(y, other.y);
-        }
+    @JsonProperty("a")
+    public String a;
+    public int b;
+    public boolean c;
+    public String d = "abc";
+    public String[] array;
+    public double doubleValue;
+    public List<SimpleContainer> generic;
 
+    @Override
+    public String build()
+    {
+        throw new UnsupportedOperationException();
     }
 }

@@ -24,7 +24,6 @@
 package com.github.cleverelephant.prototypetest;
 
 import com.github.cleverelephant.prototype.IntegrityChecker;
-import com.github.cleverelephant.prototype.PrototypeException;
 import com.github.cleverelephant.prototype.SerializationManager;
 
 import java.io.IOException;
@@ -45,7 +44,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class SerializationTest
 {
     static TestPrototype proto;
-    static WrongDefaultPrototype wrongDefaultPrototype;
     static ObjectMapper objectMapper;
 
     @BeforeAll
@@ -56,10 +54,6 @@ class SerializationTest
         Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
         String content = Files.readString(dataPath);
         proto = SerializationManager.deserializePrototype("test", content);
-
-        dataPath = Path.of(SerializationTest.class.getResource("wrongDefault.json").toURI());
-        content = Files.readString(dataPath);
-        wrongDefaultPrototype = SerializationManager.deserializePrototype("wrongDefault", content);
     }
 
     @AfterAll
@@ -67,32 +61,29 @@ class SerializationTest
     {
         objectMapper = null;
         proto = null;
-        wrongDefaultPrototype = null;
     }
 
     @Test
     void test()
     {
         assertAll(
-                () -> assertEquals("test", proto.name(), "wrong name"),
-                () -> assertEquals("a", proto.a(), "wrong data"), () -> assertEquals(1, proto.b(), "wrong data"),
-                () -> assertTrue(proto.c(), "wrong data"), () -> assertEquals("abc", proto.d(), "wrong data"),
-                () -> assertArrayEquals(new String[] { "first", "second" }, proto.array(), "wrong data"),
+                () -> assertEquals("test", proto.name, "wrong name"), () -> assertEquals("a", proto.a, "wrong data"),
+                () -> assertEquals(1, proto.b, "wrong data"), () -> assertTrue(proto.c, "wrong data"),
+                () -> assertEquals("abc", proto.d, "wrong data"),
+                () -> assertArrayEquals(new String[] { "first", "second" }, proto.array, "wrong data"),
                 () -> assertIterableEquals(
                         Arrays.asList(
                                 new TestPrototype.SimpleContainer(1, "first"),
                                 new TestPrototype.SimpleContainer(2, "second")
-                        ), proto.generic(), "wrong generic data"
-                ),
-                () -> assertThrows(PrototypeException.class, () -> proto.missingDefault(), "missing data not missing")
+                        ), proto.generic, "wrong generic data"
+                )
         );
     }
 
     @Test
     void testVerifyIntegrity()
     {
-        assertTrue(IntegrityChecker.verifySelfContaintedIntegrity(proto));
-        assertTrue(IntegrityChecker.verifySelfContaintedIntegrity(wrongDefaultPrototype));
+        assertFalse(IntegrityChecker.verifySelfContaintedIntegrity(proto));
     }
 
 }
