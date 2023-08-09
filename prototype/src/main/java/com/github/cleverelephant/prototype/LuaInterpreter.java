@@ -1,7 +1,6 @@
 package com.github.cleverelephant.prototype;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.script.Bindings;
 import javax.script.CompiledScript;
@@ -42,8 +41,7 @@ public class LuaInterpreter
 
     public void updatePrototype(String name, String script)
     {
-        Optional<PrototypeDefinition> optional = PrototypeRegistry.getDefinition(name);
-        PrototypeDefinition definition = optional.orElseGet(PrototypeDefinition::new);
+        PrototypeDefinition definition = PrototypeRegistry.getOrCreateDefinition(name);
         updatePrototype(definition, script);
     }
 

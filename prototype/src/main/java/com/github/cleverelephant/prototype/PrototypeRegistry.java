@@ -125,4 +125,17 @@ public final class PrototypeRegistry
         return Optional.ofNullable(DEFINITIONS.get(name));
     }
 
+    /**
+     * Returns a registered prototype, or create a new one if no prototype is registered with the given name.
+     *
+     * @param  name
+     *              to query
+     *
+     * @return      the prototype
+     */
+    public static synchronized PrototypeDefinition getOrCreateDefinition(String name)
+    {
+        return DEFINITIONS.computeIfAbsent(name, __ -> new PrototypeDefinition());
+    }
+
 }
