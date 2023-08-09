@@ -34,14 +34,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Maintains a list of all registered {@link PrototypeDefinition PrototypeDefinitions}.
+ * Maintains a list of all registered {@link Prototype Prototypes}.
  *
  * @author Benjamin Wied
  */
 public final class PrototypeRegistry
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeRegistry.class);
-    private static final Map<String, PrototypeDefinition> DEFINITIONS = new HashMap<>();
     private static final Map<String, Prototype<?>> PROTOTYPES = new HashMap<>();
 
     private PrototypeRegistry()
@@ -50,38 +49,35 @@ public final class PrototypeRegistry
     }
 
     /**
-     * @return a (immutable) set containing the names of all registered {@link PrototypeDefinition PrototypeDefinitions}
+     * @return a (immutable) set containing the names of all registered {@link Prototype Prototypes}
      */
     public static synchronized Set<String> keys()
     {
-        return Collections.unmodifiableSet(DEFINITIONS.keySet());
+        return Collections.unmodifiableSet(PROTOTYPES.keySet());
     }
 
     /**
-     * Unregisters all definitions.
+     * Clears the registry, forcing all prototypes to regenerate.
      */
     public static synchronized void clear()
     {
-        DEFINITIONS.clear();
-        clearCache();
-    }
-
-    /**
-     * Clears the cache, forcing all prototypes to regenerate.
-     */
-    public static synchronized void clearCache()
-    {
         PROTOTYPES.clear();
-        PrototypeContext.makeContextLive();
     }
 
-    public static synchronized void register(String name, PrototypeDefinition definition)
+    public static synchronized void registerAll(Map<String, Prototype<?>> prototypes)
     {
-        Objects.requireNonNull(definition, "definition must not be null");
-        if (DEFINITIONS.containsKey(name))
-            LOGGER.warn("A definition with name {} is already registered", name);
+        for (Map.Entry<String, Prototype<?>> entry : prototypes.entrySet())
+            register(entry.getValue());
+    }
 
-        DEFINITIONS.put(name, definition);
+    public static synchronized void register(Prototype<?> prototype)
+    {
+        Objects.requireNonNull(prototype, "prototype must not be null");
+        String name = prototype.name;
+        if (PROTOTYPES.containsKey(name))
+            LOGGER.warn("A prototype with name {} is already registered", name);
+
+        PROTOTYPES.put(name, prototype);
     }
 
     /**
@@ -102,40 +98,7 @@ public final class PrototypeRegistry
 
         if (PROTOTYPES.containsKey(name))
             return Optional.of((P) PROTOTYPES.get(name));
-
-        Optional<P> opt = Optional.ofNullable(DEFINITIONS.get(name))
-                .map(LuaInterpreter.INSTANCE::evalPrototypeDefinition)
-                .map(data -> SerializationManager.deserializePrototype(name, data));
-        if (opt.isPresent())
-            PROTOTYPES.put(name, opt.get());
-        return opt;
-    }
-
-    /**
-     * Returns a optional containing the registered definition, or an empty Optional is no definition is registered with
-     * the given name.
-     *
-     * @param  name
-     *              to query
-     *
-     * @return      the prototype
-     */
-    public static synchronized Optional<PrototypeDefinition> getDefinition(String name)
-    {
-        return Optional.ofNullable(DEFINITIONS.get(name));
-    }
-
-    /**
-     * Returns a registered prototype, or create a new one if no prototype is registered with the given name.
-     *
-     * @param  name
-     *              to query
-     *
-     * @return      the prototype
-     */
-    public static synchronized PrototypeDefinition getOrCreateDefinition(String name)
-    {
-        return DEFINITIONS.computeIfAbsent(name, __ -> new PrototypeDefinition());
+        return Optional.empty();
     }
 
 }

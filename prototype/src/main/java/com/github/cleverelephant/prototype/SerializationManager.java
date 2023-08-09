@@ -29,13 +29,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -44,6 +45,7 @@ import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,8 +75,8 @@ public final class SerializationManager
      * Loads game data from a file or a directory. The {@link Consumer#accept(Object) consumer's accept function} is
      * called once for each prototype loaded.<br>
      * <br>
-     * <em>This method should usually not called manually, use
-     * {@link PrototypeManager#loadPrototypes(Path, ExecutorService)} instead.</em>
+     * <em>This method should usually not called manually, use {@link PrototypeManager#loadPrototypes(Path, Map)}
+     * instead.</em>
      *
      * @param  path
      *                              file or root directory
@@ -88,9 +90,9 @@ public final class SerializationManager
      * @throws NullPointerException
      *                              if either path or consumer is null
      *
-     * @see                         PrototypeManager#loadPrototypes(Path, ExecutorService)
+     * @see                         PrototypeManager#loadPrototypes(Path, Map)
      */
-    public static void loadGameData(Path path, BiConsumer<String, String> consumer, ExecutorService loadingPool)
+    public static void loadGameData(Path path, Consumer<String> consumer, ExecutorService loadingPool)
             throws IOException
     {
         Objects.requireNonNull(path, "path must not be null");
@@ -103,6 +105,15 @@ public final class SerializationManager
             loadGameDataFromFile(path, path.relativize(path), consumer);
         else
             throw new PrototypeException("failed to load game data from " + path);
+    }
+
+    public static Map<String, Prototype<?>> deserializePrototypes(ObjectNode data)
+    {
+        Map<String, Prototype<?>> result = new HashMap<>();
+        data.fields().forEachRemaining(
+                entry -> result.put(entry.getKey(), deserializePrototype(entry.getKey(), entry.getValue()))
+        );
+        return result;
     }
 
     public static <T extends Prototype<?>> T deserializePrototype(String name, JsonNode data)
@@ -134,8 +145,8 @@ public final class SerializationManager
     /**
      * Deserializes a single prototype given its name and its class.<br>
      * <br>
-     * <em>This method should usually not called manually, use
-     * {@link PrototypeManager#loadPrototypes(Path, ExecutorService)} instead.</em>
+     * <em>This method should usually not called manually, use {@link PrototypeManager#loadPrototypes(Path, Map)}
+     * instead.</em>
      *
      * @param  <T>
      *                              prototype generic type
@@ -149,7 +160,7 @@ public final class SerializationManager
      * @throws NullPointerException
      *                              if any parameter is {@code null}
      *
-     * @see                         #loadGameData(Path, BiConsumer, ExecutorService)
+     * @see                         #loadGameData(Path, Consumer, ExecutorService)
      * @see                         #prototypeNameFromPath(Path)
      */
     private static <T extends Prototype<?>> T deserializePrototype(String name, Function<ObjectReader, T> generator)
@@ -162,9 +173,8 @@ public final class SerializationManager
         return generator.apply(OBJECT_MAPPER.reader(injectableValues).forType(Prototype.class));
     }
 
-    private static void loadGameDataFromDirectory(
-            Path path, BiConsumer<String, String> consumer, ExecutorService loadingPool
-    ) throws IOException
+    private static void loadGameDataFromDirectory(Path path, Consumer<String> consumer, ExecutorService loadingPool)
+            throws IOException
     {
         Set<Future<?>> futures = new HashSet<>();
 
@@ -199,25 +209,18 @@ public final class SerializationManager
         return path.getFileName().toString().endsWith(".lua");
     }
 
-    private static void loadGameDataFromFile(Path path, Path relativePath, BiConsumer<String, String> consumer)
+    private static void loadGameDataFromFile(Path path, Path relativePath, Consumer<String> consumer)
     {
         if (!isFileValid(path)) {
             LOGGER.atWarn().addMarker(Prototype.LOG_MARKER).log("skipping invalid file {}", compressLoggingPath(path));
             return;
         }
 
-        try {
-            LOGGER.atDebug().addMarker(Prototype.LOG_MARKER)
-                    .log("loading game data from path {}", compressLoggingPath(path));
+        LOGGER.atDebug().addMarker(Prototype.LOG_MARKER)
+                .log("loading game data from path {}", compressLoggingPath(path));
 
-            String name = prototypeNameFromPath(relativePath);
-            String content = Files.readString(path);
-            consumer.accept(name, content);
-        } catch (IOException e) {
-            LOGGER.atError().addMarker(Prototype.LOG_MARKER).setCause(e)
-                    .log("failed to load game data from path {}", path);
-            throw new PrototypeException("failed to load game data", e);
-        }
+        String name = prototypeNameFromPath(relativePath);
+        consumer.accept(name);
     }
 
     /**

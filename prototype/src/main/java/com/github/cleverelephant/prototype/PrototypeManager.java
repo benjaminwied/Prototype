@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -188,18 +189,18 @@ public final class PrototypeManager
      *
      * @param  path
      *                     to search for prototypes
-     * @param  executor
-     *                     if non-null, will be used to load prototypes
+     * @param  context
+     *                     prototype context to use
      *
      * @throws IOException
      *                     if an IOException occurs while reading prototypes
      *
-     * @see                SerializationManager#loadGameData(Path, java.util.function.BiConsumer, ExecutorService)
+     * @see                SerializationManager#loadGameData(Path, java.util.function.Consumer, ExecutorService)
      */
-    public static void loadPrototypes(Path path, ExecutorService executor) throws IOException
+    public static void loadPrototypes(Path path, Map<String, Object> context) throws IOException
     {
-        SerializationManager.loadGameData(
-                Objects.requireNonNull(path, "path" + NULL), LuaInterpreter.INSTANCE::updatePrototype, executor
-        );
+        LuaInterpreter interpreter = new LuaInterpreter(context);
+        SerializationManager.loadGameData(Objects.requireNonNull(path, "path" + NULL), interpreter::runScript, null);
+        PrototypeRegistry.registerAll(SerializationManager.deserializePrototypes(interpreter.computeData()));
     }
 }

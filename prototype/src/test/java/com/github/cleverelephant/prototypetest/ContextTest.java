@@ -1,52 +1,54 @@
 package com.github.cleverelephant.prototypetest;
 
 import com.github.cleverelephant.prototype.LuaInterpreter;
-import com.github.cleverelephant.prototype.PrototypeContext;
-import com.github.cleverelephant.prototype.PrototypeDefinition;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ContextTest
 {
+    Map<String, Object> context;
 
     @BeforeEach
     void setUp() throws Exception
     {
-        Map<String, Object> context = new HashMap<>();
+        context = new HashMap<>();
         context.put("foo", "bar");
-        PrototypeContext.activateContext(context);
     }
 
     @AfterEach
     void tearDown() throws Exception
     {
-        PrototypeContext.activateContext(Collections.emptyMap());
+        context = null;
     }
 
     @Test
     void testContext() throws IOException, URISyntaxException
     {
         String json = Files.readString(Path.of(getClass().getResource("context.json").toURI()));
-        String lua = Files.readString(Path.of(getClass().getResource("context.lua").toURI()));
 
-        PrototypeDefinition def = new PrototypeDefinition();
-        LuaInterpreter.INSTANCE.updatePrototype(def, lua);
-        JsonNode node = LuaInterpreter.INSTANCE.evalPrototypeDefinition(def);
+        LuaInterpreter interpreter = new LuaInterpreter(context);
+        interpreter.runScript("com.github.cleverelephant.prototypetest.context.lua");
+        ObjectNode prototypes = interpreter.computeData();
+        assertEquals(1, prototypes.size(), "wrong number of prototypes");
+        JsonNode node = prototypes.get("context");
+        assertNotNull(node, "missing test prototype");
+
         ObjectMapper mapper = new ObjectMapper();
         JsonNode expectedNode = mapper.readTree(json);
 

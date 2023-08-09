@@ -1,76 +1,59 @@
 package com.github.cleverelephant.prototype;
 
-import java.util.List;
-
-import javax.script.Bindings;
-import javax.script.CompiledScript;
-import javax.script.ScriptException;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
-import org.luaj.vm2.script.LuaScriptEngine;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.luaj.vm2.lib.jse.CoerceJavaToLua;
+import org.luaj.vm2.lib.jse.JsePlatform;
 
 public class LuaInterpreter
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LuaInterpreter.class);
-    public static final LuaInterpreter INSTANCE = new LuaInterpreter();
-    private LuaScriptEngine scriptEngine;
+    private Globals globals;
 
-    private LuaInterpreter()
+    public LuaInterpreter(Map<String, Object> context)
     {
-        scriptEngine = new LuaScriptEngine();
+        globals = JsePlatform.standardGlobals();
+        for (Entry<String, Object> entry : context.entrySet())
+            globals.set(entry.getKey(), CoerceJavaToLua.coerce(entry.getValue()));
+        globals.set("prototypes", new LuaTable());
     }
 
-    public void updatePrototype(PrototypeDefinition definition, String script)
+    public void runScript(String file)
     {
-        try {
-            definition.getScripts().add(scriptEngine.compile(script));
-        } catch (ScriptException e) {
-            LOGGER.error("Error while updating prototype", e);
+        if (file.endsWith(".lua"))
+            file = file.substring(0, file.length() - 4);
+        globals.load("require(\"" + file + "\")").call();
+    }
+
+    public ObjectNode computeData()
+    {
+        LuaTable prototypes = globals.get("prototypes").checktable();
+
+        ObjectNode result = new ObjectNode(JsonNodeFactory.instance);
+
+        LuaValue key = LuaValue.NIL;
+        while (true) {
+            Varargs data = prototypes.next(key);
+            if (data == LuaValue.NIL)
+                return result;
+            key = data.arg(1);
+            LuaTable prototype = data.arg(2).checktable();
+            String c = prototype.get("class").checkjstring();
+            JsonNode d = toJson(prototype.get("data").checktable());
+
+            ObjectNode node = new ObjectNode(JsonNodeFactory.instance);
+            node.set(c, d);
+            result.set(key.checkjstring(), node);
         }
-    }
-
-    public void updatePrototype(String name, String script)
-    {
-        PrototypeDefinition definition = PrototypeRegistry.getOrCreateDefinition(name);
-        updatePrototype(definition, script);
-    }
-
-    public JsonNode evalPrototypeDefinition(PrototypeDefinition definition)
-    {
-        try {
-            Bindings bindings = runScripts(definition.getScripts());
-
-            JsonNode node = toJson((LuaTable) bindings.get("data"));
-            String className = (String) bindings.get("class");
-
-            ObjectNode result = new ObjectNode(JsonNodeFactory.instance);
-            result.set(className, node);
-            return result;
-        } catch (ScriptException e) {
-            LOGGER.error("Error while updating prototype", e);
-            return null;
-        }
-    }
-
-    private Bindings runScripts(List<CompiledScript> scripts) throws ScriptException
-    {
-        Bindings bindings = scriptEngine.createBindings();
-        bindings.putAll(PrototypeContext.getCurrentContext());
-
-        for (CompiledScript script : scripts)
-            script.eval(bindings);
-
-        return bindings;
     }
 
     public static JsonNode toJson(LuaTable table)

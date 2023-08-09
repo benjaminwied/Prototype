@@ -24,19 +24,21 @@
 package com.github.cleverelephant.prototype.parser;
 
 import com.github.cleverelephant.prototype.LuaInterpreter;
-import com.github.cleverelephant.prototype.PrototypeDefinition;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SuppressWarnings({ "javadoc" })
 class DefinitionDeserializerTest
@@ -46,11 +48,14 @@ class DefinitionDeserializerTest
     void testAddDefinition() throws IOException, URISyntaxException
     {
         String json = Files.readString(Path.of(getClass().getResource("test.json").toURI()));
-        String lua = Files.readString(Path.of(getClass().getResource("test.lua").toURI()));
 
-        PrototypeDefinition def = new PrototypeDefinition();
-        LuaInterpreter.INSTANCE.updatePrototype(def, lua);
-        JsonNode node = LuaInterpreter.INSTANCE.evalPrototypeDefinition(def);
+        LuaInterpreter interpreter = new LuaInterpreter(Collections.emptyMap());
+        interpreter.runScript("com.github.cleverelephant.prototype.parser.test.lua");
+        ObjectNode prototypes = interpreter.computeData();
+        assertEquals(1, prototypes.size(), "wrong number of prototypes");
+        JsonNode node = prototypes.get("test");
+        assertNotNull(node, "missing test prototype");
+
         ObjectMapper mapper = new ObjectMapper();
         JsonNode expectedNode = mapper.readTree(json);
 
