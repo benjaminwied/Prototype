@@ -1,5 +1,6 @@
 package com.github.cleverelephant.prototype;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -9,6 +10,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.luaj.vm2.Globals;
+import org.luaj.vm2.LuaString;
 import org.luaj.vm2.LuaTable;
 import org.luaj.vm2.LuaValue;
 import org.luaj.vm2.Varargs;
@@ -21,10 +23,18 @@ public class LuaInterpreter
 
     public LuaInterpreter(Map<String, Object> context)
     {
+        this(null, context);
+    }
+
+    public LuaInterpreter(Path basePath, Map<String, Object> context)
+    {
         globals = JsePlatform.standardGlobals();
         for (Entry<String, Object> entry : context.entrySet())
             globals.set(entry.getKey(), CoerceJavaToLua.coerce(entry.getValue()));
         globals.set("prototypes", new LuaTable());
+
+        if (basePath != null)
+            globals.get("package").set("path", LuaString.valueOf(basePath.toString()) + "/?.lua");
     }
 
     public void runScript(String file)

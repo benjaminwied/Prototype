@@ -199,7 +199,7 @@ public final class PrototypeManager
      */
     public static void loadPrototypes(Path path, Map<String, Object> context) throws IOException
     {
-        LuaInterpreter interpreter = new LuaInterpreter(context);
+        LuaInterpreter interpreter = new LuaInterpreter(path, context);
         SerializationManager.loadGameData(Objects.requireNonNull(path, "path" + NULL), interpreter::runScript, null);
         PrototypeRegistry.registerAll(SerializationManager.deserializePrototypes(interpreter.computeData()));
     }
