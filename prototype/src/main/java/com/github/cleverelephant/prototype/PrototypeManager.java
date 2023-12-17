@@ -201,6 +201,6 @@ public final class PrototypeManager
     {
         LuaInterpreter interpreter = new LuaInterpreter(path, context);
         SerializationManager.loadGameData(Objects.requireNonNull(path, "path" + NULL), interpreter::runScript, null);
-        PrototypeRegistry.registerAll(SerializationManager.deserializePrototypes(interpreter.computeData()));
+        PrototypeRegistry.registerAll(SerializationManager.deserializePrototypes(interpreter.computeData(), context));
     }
 }

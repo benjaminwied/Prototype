@@ -31,6 +31,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -53,7 +54,7 @@ class SerializationTest
 
         Path dataPath = Path.of(SerializationTest.class.getResource("test.json").toURI());
         String content = Files.readString(dataPath);
-        proto = SerializationManager.deserializePrototype("test", content);
+        proto = SerializationManager.deserializePrototype("test", content, new HashMap<>());
     }
 
     @AfterAll

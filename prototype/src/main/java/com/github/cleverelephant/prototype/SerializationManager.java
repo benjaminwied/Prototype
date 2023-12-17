@@ -107,18 +107,19 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
-    public static Map<String, Prototype<?>> deserializePrototypes(ObjectNode data)
+    public static Map<String, Prototype<?>> deserializePrototypes(ObjectNode data, Map<String, Object> context)
     {
         Map<String, Prototype<?>> result = new HashMap<>();
         data.fields().forEachRemaining(
-                entry -> result.put(entry.getKey(), deserializePrototype(entry.getKey(), entry.getValue()))
+                entry -> result.put(entry.getKey(), deserializePrototype(entry.getKey(), entry.getValue(), context))
         );
         return result;
     }
 
-    public static <T extends Prototype<?>> T deserializePrototype(String name, JsonNode data)
+    public static <
+            T extends Prototype<?>> T deserializePrototype(String name, JsonNode data, Map<String, Object> context)
     {
-        return deserializePrototype(name, reader -> {
+        return deserializePrototype(name, context, reader -> {
             try {
                 return reader.readValue(data);
             } catch (IOException e) {
@@ -129,9 +130,9 @@ public final class SerializationManager
         });
     }
 
-    public static <T extends Prototype<?>> T deserializePrototype(String name, String data)
+    public static <T extends Prototype<?>> T deserializePrototype(String name, String data, Map<String, Object> context)
     {
-        return deserializePrototype(name, reader -> {
+        return deserializePrototype(name, context, reader -> {
             try {
                 return reader.readValue(data);
             } catch (JsonProcessingException e) {
@@ -154,6 +155,8 @@ public final class SerializationManager
      *                              data source
      * @param  name
      *                              prototype name
+     * @param  context
+     *                              prototype context (injected values)
      *
      * @return                      the deserialized prototype
      *
@@ -163,13 +166,15 @@ public final class SerializationManager
      * @see                         #loadGameData(Path, Consumer, ExecutorService)
      * @see                         #prototypeNameFromPath(Path)
      */
-    private static <T extends Prototype<?>> T deserializePrototype(String name, Function<ObjectReader, T> generator)
+    private static <T extends Prototype<?>> T deserializePrototype(
+            String name, Map<String, Object> context, Function<ObjectReader, T> generator
+    )
     {
         if (generator == null)
             throw new NullPointerException("generator must not be null");
         Objects.requireNonNull(name, "name must not be null");
 
-        InjectableValues injectableValues = new InjectableValues.Std().addValue("name", name);
+        InjectableValues injectableValues = new InjectableValues.Std(new HashMap<>(context)).addValue("name", name);
         return generator.apply(OBJECT_MAPPER.reader(injectableValues).forType(Prototype.class));
     }
 
