@@ -107,7 +107,7 @@ prototypes["anotherPrototype"] = {
 
 Use gradle
 ```gradle
-implementation 'com.github.cleverelephant.prototype:prototype:0.3.0'
+implementation 'io.github.cleverelephant:prototype:0.3.0'
 ```
 
 ## Contributing
