@@ -148,4 +148,4 @@ Project Link: [https://github.com/CleverElephant/Prototype](https://github.com/C
 [issues-shield]: https://img.shields.io/github/issues/CleverElephant/Prototype.svg?style=flat
 [issues-url]: https://github.com/CleverElephant/Prototype/issues
 [license-shield]: https://img.shields.io/github/license/CleverElephant/Prototype.svg?style=flat
-[license-url]: https://github.com/CleverElephant/Prototype/blob/master/LICENSE.txt
+[license-url]: https://github.com/CleverElephant/Prototype/blob/master/LICENSE
