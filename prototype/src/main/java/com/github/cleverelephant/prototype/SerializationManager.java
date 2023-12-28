@@ -107,6 +107,17 @@ public final class SerializationManager
             throw new PrototypeException("failed to load game data from " + path);
     }
 
+    /**
+     * Deserializes all prototypes from the given json object, where the keys are prototype names and the values are
+     * their data.
+     *
+     * @param  data
+     *                 json data
+     * @param  context
+     *                 prototype context (injected values)
+     *
+     * @return         the deserialized prototypes
+     */
     public static Map<String, Prototype<?>> deserializePrototypes(ObjectNode data, Map<String, Object> context)
     {
         Map<String, Prototype<?>> result = new HashMap<>();
@@ -116,6 +127,20 @@ public final class SerializationManager
         return result;
     }
 
+    /**
+     * Deserializes a single prototype given its name and json data.
+     *
+     * @param  <T>
+     *                 prototype generic type
+     * @param  name
+     *                 prototype name
+     * @param  data
+     *                 json data
+     * @param  context
+     *                 prototype context (injected values)
+     *
+     * @return         the deserialized prototype
+     */
     public static <
             T extends Prototype<?>> T deserializePrototype(String name, JsonNode data, Map<String, Object> context)
     {
@@ -130,6 +155,20 @@ public final class SerializationManager
         });
     }
 
+    /**
+     * Deserializes a single prototype given its name and json data.
+     *
+     * @param  <T>
+     *                 prototype generic type
+     * @param  name
+     *                 prototype name
+     * @param  data
+     *                 json data
+     * @param  context
+     *                 prototype context (injected values)
+     *
+     * @return         the deserialized prototype
+     */
     public static <T extends Prototype<?>> T deserializePrototype(String name, String data, Map<String, Object> context)
     {
         return deserializePrototype(name, context, reader -> {

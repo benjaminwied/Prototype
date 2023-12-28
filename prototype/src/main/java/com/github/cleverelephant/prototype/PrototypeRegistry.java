@@ -64,12 +64,29 @@ public final class PrototypeRegistry
         PROTOTYPES.clear();
     }
 
+    /**
+     * Registers all prototypes in the specified map.
+     *
+     * @param prototypes
+     *                   to register
+     *
+     * @see              #register(Prototype)
+     */
     public static synchronized void registerAll(Map<String, Prototype<?>> prototypes)
     {
         for (Map.Entry<String, Prototype<?>> entry : prototypes.entrySet())
             register(entry.getValue());
     }
 
+    /**
+     * Registers the specified prototype, replacing any previously registered prototype with the same name.
+     *
+     * @param  prototype
+     *                              to register, must not be null
+     *
+     * @throws NullPointerException
+     *                              if the prototype is null
+     */
     public static synchronized void register(Prototype<?> prototype)
     {
         Objects.requireNonNull(prototype, "prototype must not be null");

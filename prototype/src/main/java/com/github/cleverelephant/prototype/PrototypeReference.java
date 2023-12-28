@@ -102,6 +102,17 @@ public final class PrototypeReference<T, P extends Prototype<T>>
         PrototypeManager.checkName(targetPrototypeName);
     }
 
+    /**
+     * Constructs a new {@code PrototypeReference} using the given {@code name}.
+     *
+     * @param  name
+     *                                  name of the prototype this reference points to
+     *
+     * @throws NullPointerException
+     *                                  if {@code name} is null
+     * @throws IllegalArgumentException
+     *                                  if {@code name} is not a valid prototype name
+     */
     public PrototypeReference(String name)
     {
         Objects.requireNonNull(name, "relativeTargetName must not be null");

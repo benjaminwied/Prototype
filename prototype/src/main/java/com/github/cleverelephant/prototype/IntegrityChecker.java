@@ -51,9 +51,7 @@ public final class IntegrityChecker
      * <br>
      * This will check for
      * <ul>
-     * <li>Missing properties with no default value,
-     * <li>Default values wihout properties,
-     * <li>Property & default value accessors that throw exceptions and
+     * <li>Nested prototypes
      * <li>Missing {@code PrototypeReference}.
      * </ul>
      * If the check passes, this method returns. Otherwise, an {@code PrototypeException} is thrown.

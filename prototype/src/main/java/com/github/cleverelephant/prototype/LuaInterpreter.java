@@ -19,9 +19,52 @@ import org.luaj.vm2.lib.VarArgFunction;
 import org.luaj.vm2.lib.jse.CoerceJavaToLua;
 import org.luaj.vm2.lib.jse.JsePlatform;
 
+/**
+ * Executes lua prototype definitions.<br>
+ * Prototypes consist of two parts:
+ * <ul>
+ * <li>Their full class name
+ * <li>Their properties
+ * </ul>
+ * They are then written into the global table 'prototypes' using their name as key.<br>
+ * See the example below.<br>
+ *
+ * <pre>
+ * <code>
+ * prototypes["prototypeName"] = {
+ *     class = "com.example.ExamplePrototype",
+ *     data = {
+ *           exampleValue = 42,
+ *           exampleList = { 1, 2, 3 }
+ *     }
+ * }
+ * </code>
+ * </pre>
+ *
+ * Then load the prototype using
+ *
+ * <pre>
+ * <code>
+ * Map<String, Object> context = ...;
+ * LuaInterpreter interpreter = new LuaInterpreter(context);
+ * interpreter.runScript("prototypes/prototypeName.lua");
+ * interpreter.runScript("prototypes/anotherPrototype.lua");
+ *
+ * ObjectNode data = interpreter.computeData();
+ * </code>
+ * </pre>
+ *
+ * The result is an ObjectNode containing the data of both prototypes. Deserialization is done using a
+ * {@link SerializationManager}.
+ *
+ * @author Benjamin Wied
+ *
+ * @see    SerializationManager
+ * @see    <a href="https://github.com/luaj/luaj">luaj GitHub repository</a>
+ */
 public class LuaInterpreter
 {
-    public class CustomSearchPath extends VarArgFunction
+    private class CustomSearchPath extends VarArgFunction
     {
         public static final String FILE_SEP = "/";
 
@@ -74,11 +117,25 @@ public class LuaInterpreter
 
     private Globals globals;
 
+    /**
+     * Constructs a new LuaInterpreter with the given context.
+     *
+     * @param context
+     *                the context, available to lua via globals
+     */
     public LuaInterpreter(Map<String, Object> context)
     {
         this(null, context);
     }
 
+    /**
+     * Constructs a new LuaInterpreter with the given context and basePath.
+     *
+     * @param basePath
+     *                 to search for prototypes
+     * @param context
+     *                 the context, available to lua via globals
+     */
     public LuaInterpreter(Path basePath, Map<String, Object> context)
     {
         globals = JsePlatform.standardGlobals();
@@ -91,6 +148,12 @@ public class LuaInterpreter
         globals.get("package").set("searchpath", new CustomSearchPath());
     }
 
+    /**
+     * Loads a lua script. This has the same effect as calling <code>require(file)</code> from lua.
+     *
+     * @param file
+     *             the name of the lua script (with or without .lua extension), relative to basePath
+     */
     public void runScript(String file)
     {
         if (file.endsWith(".lua"))
@@ -98,6 +161,11 @@ public class LuaInterpreter
         globals.load("require(\"" + file + "\")").call();
     }
 
+    /**
+     * Converts the lua prototype definitions into an object node.
+     *
+     * @return the object node
+     */
     public ObjectNode computeData()
     {
         LuaTable prototypes = globals.get("prototypes").checktable();
@@ -120,6 +188,14 @@ public class LuaInterpreter
         }
     }
 
+    /**
+     * Converts the given lua table into a json node.
+     *
+     * @param  table
+     *               the lua table
+     *
+     * @return       the json node
+     */
     public static JsonNode toJson(LuaTable table)
     {
         if (table.length() == 0)
