@@ -1,3 +1,3 @@
 
-rootProject.name = "com.github.cleverelephant.prototype"
+rootProject.name = "io.github.cleverelephant.prototype"
 include(":prototype")
