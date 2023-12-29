@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.cleverelephant.prototype;
+package io.github.cleverelephant.prototype;
 
 import java.io.InputStream;
 import java.nio.file.Path;
@@ -68,7 +68,7 @@ import org.luaj.vm2.lib.jse.JsePlatform;
  *
  * <pre>
  * <code>
- * Map<String, Object> context = ...;
+ * Map&#60;String, Object&#62; context = ...;
  * LuaInterpreter interpreter = new LuaInterpreter(context);
  * interpreter.runScript("prototypes/prototypeName.lua");
  * interpreter.runScript("prototypes/anotherPrototype.lua");

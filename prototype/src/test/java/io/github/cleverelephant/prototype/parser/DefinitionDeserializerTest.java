@@ -21,9 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.cleverelephant.prototype.parser;
-
-import com.github.cleverelephant.prototype.LuaInterpreter;
+package io.github.cleverelephant.prototype.parser;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,6 +34,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.jupiter.api.Test;
+
+import io.github.cleverelephant.prototype.LuaInterpreter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -50,7 +50,7 @@ class DefinitionDeserializerTest
         String json = Files.readString(Path.of(getClass().getResource("test.json").toURI()));
 
         LuaInterpreter interpreter = new LuaInterpreter(Collections.emptyMap());
-        interpreter.runScript("com.github.cleverelephant.prototype.parser.test.lua");
+        interpreter.runScript("io.github.cleverelephant.prototype.parser.test.lua");
         ObjectNode prototypes = interpreter.computeData();
         assertEquals(1, prototypes.size(), "wrong number of prototypes");
         JsonNode node = prototypes.get("test");

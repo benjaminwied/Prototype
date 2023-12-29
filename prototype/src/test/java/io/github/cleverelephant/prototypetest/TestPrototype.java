@@ -21,14 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.cleverelephant.prototypetest;
-
-import com.github.cleverelephant.prototype.Prototype;
+package io.github.cleverelephant.prototypetest;
 
 import java.util.List;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import io.github.cleverelephant.prototype.Prototype;
 
 @SuppressWarnings("javadoc")
 public class TestPrototype extends Prototype<String>

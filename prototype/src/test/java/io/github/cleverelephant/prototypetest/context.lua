@@ -30,6 +30,6 @@ if ( foo == "bar") then
 end
 
 prototypes["context"] = {
-    class = "com.github.cleverelephant.prototypetest.TestPrototype",
+    class = "io.github.cleverelephant.prototypetest.TestPrototype",
     data = { value = v }
 }

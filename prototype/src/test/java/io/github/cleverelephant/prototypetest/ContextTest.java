@@ -21,9 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.cleverelephant.prototypetest;
-
-import com.github.cleverelephant.prototype.LuaInterpreter;
+package io.github.cleverelephant.prototypetest;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -39,6 +37,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import io.github.cleverelephant.prototype.LuaInterpreter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,7 +66,7 @@ class ContextTest
         String json = Files.readString(Path.of(getClass().getResource("context.json").toURI()));
 
         LuaInterpreter interpreter = new LuaInterpreter(context);
-        interpreter.runScript("com.github.cleverelephant.prototypetest.context.lua");
+        interpreter.runScript("io.github.cleverelephant.prototypetest.context.lua");
         ObjectNode prototypes = interpreter.computeData();
         assertEquals(1, prototypes.size(), "wrong number of prototypes");
         JsonNode node = prototypes.get("context");

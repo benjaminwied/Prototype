@@ -21,10 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.github.cleverelephant.prototypetest;
-
-import com.github.cleverelephant.prototype.IntegrityChecker;
-import com.github.cleverelephant.prototype.SerializationManager;
+package io.github.cleverelephant.prototypetest;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -38,6 +35,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import io.github.cleverelephant.prototype.IntegrityChecker;
+import io.github.cleverelephant.prototype.SerializationManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
