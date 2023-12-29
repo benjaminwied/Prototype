@@ -5,6 +5,7 @@ plugins {
     id "com.github.hierynomus.license" version "0.16.1"
     id "maven-publish"
     id "io.github.themrmilchmann.ecj" version "0.2.0"
+    id "signing"
 }
 
 allprojects {
@@ -16,6 +17,7 @@ allprojects {
     apply plugin: "com.github.hierynomus.license"
     apply plugin: "maven-publish"
     apply plugin: "io.github.themrmilchmann.ecj"
+    apply plugin: "signing"
 
     repositories {
         mavenCentral()
@@ -42,17 +44,74 @@ allprojects {
         from sourceSets.main.allJava
         archiveClassifier = "sources"
     }
+    
+    task javadocJar(type: Jar) {
+        from javadoc
+        archiveClassifier = "javadoc"
+    }
 
     publishing {
         publications {
-            prototype(MavenPublication) {
+            mavenJava(MavenPublication) {
                 from components.java
                 artifact sourceJar
+                artifact javadocJar
+                
+                 pom {
+                    description = "A small library for loading prototypes from lua files in java."
+                    url = "https://github.com/CleverElephant/Prototype"
+                    
+                    licenses {
+                        license {
+                            name = "MIT"
+                            url = "https://opensource.org/license/mit/"
+                        }
+                    }
+                    
+                    developers {
+                        developer {
+                            id = "CleverElephant"
+                            name = "Benjamin Wied"
+                            email = "88872078+CleverElephant@users.noreply.github.com"
+                        }
+                    }
+                    
+                    scm {
+                        connection = "scm:git@github.com:CleverElephant/Prototype.git"
+                        developerConnection = "scm:git@github.com:CleverElephant/Prototype.git"
+                        url = "https://github.com/CleverElephant/Prototype"
+                    }
+                }
             }
         }
     
         repositories {
             mavenLocal()
+            
+            maven {
+                name = "sonatype"
+                url = "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+                credentials {
+                    username = "$sonatypeUsername"
+                    password = "$sonatypePassword"
+                }
+
+            }
+
+        }
+    }
+    
+    signing {
+        sign publishing.publications.mavenJava
+    }
+}
+
+publishing {
+    publications {
+        mavenJava {
+             pom {
+                name = "Prototype Parent"
+            }
         }
     }
 }
