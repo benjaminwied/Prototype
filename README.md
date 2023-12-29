@@ -103,12 +103,12 @@ prototypes["anotherPrototype"] = {
 
 <!--_For more examples, please refer to the [Documentation](https://example.com)_-->
 
-<!--## Installation
+## Installation
 
 Use gradle
 ```gradle
 implementation 'io.github.cleverelephant:prototype:0.3.0'
-```-->
+```
 
 ## Contributing
 
