@@ -26,6 +26,7 @@ package io.github.cleverelephant.prototype;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -53,6 +54,7 @@ public final class PrototypeManager
     private static final Pattern PROTOTYPE_NAME_PATTERN = Pattern
             .compile("^\\w+(?:/\\w+)*$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeManager.class);
+    private static final Map<String, Prototype<?>> PROTOTYPES = new HashMap<>();
 
     private PrototypeManager()
     {
@@ -66,8 +68,8 @@ public final class PrototypeManager
     {
         return Collections.unmodifiableSet(
                 new HashSet<>(
-                        PrototypeRegistry.keys().stream().map(PrototypeRegistry::get).filter(Optional::isPresent)
-                                .map(Optional::get).toList()
+                        keys().stream().map(PrototypeManager::get).filter(Optional::isPresent).map(Optional::get)
+                                .toList()
                 )
         );
     }
@@ -100,7 +102,7 @@ public final class PrototypeManager
 
     private static <P extends Prototype<?>> Optional<P> getPrototypeNoNameCheck(String name)
     {
-        Optional<P> prototype = PrototypeRegistry.<P>get(name);
+        Optional<P> prototype = PrototypeManager.<P>get(name);
         if (prototype.isEmpty()) {
             LOGGER.trace(Prototype.LOG_MARKER, "No prototypes found for name {}", name);
             return Optional.empty();
@@ -201,6 +203,76 @@ public final class PrototypeManager
     {
         LuaInterpreter interpreter = new LuaInterpreter(path, context);
         SerializationManager.loadGameData(Objects.requireNonNull(path, "path" + NULL), interpreter::runScript, null);
-        PrototypeRegistry.registerAll(SerializationManager.deserializePrototypes(interpreter.computeData(), context));
+        registerAll(SerializationManager.deserializePrototypes(interpreter.computeData(), context));
+    }
+
+    /**
+     * @return a (immutable) set containing the names of all registered {@link Prototype Prototypes}
+     */
+    public static synchronized Set<String> keys()
+    {
+        return Collections.unmodifiableSet(PROTOTYPES.keySet());
+    }
+
+    /**
+     * Clears the registry, forcing all prototypes to regenerate.
+     */
+    public static synchronized void clear()
+    {
+        PROTOTYPES.clear();
+    }
+
+    /**
+     * Registers all prototypes in the specified map.
+     *
+     * @param prototypes
+     *                   to register
+     *
+     * @see              #register(Prototype)
+     */
+    public static synchronized void registerAll(Map<String, Prototype<?>> prototypes)
+    {
+        for (Map.Entry<String, Prototype<?>> entry : prototypes.entrySet())
+            register(entry.getValue());
+    }
+
+    /**
+     * Registers the specified prototype, replacing any previously registered prototype with the same name.
+     *
+     * @param  prototype
+     *                              to register, must not be null
+     *
+     * @throws NullPointerException
+     *                              if the prototype is null
+     */
+    public static synchronized void register(Prototype<?> prototype)
+    {
+        Objects.requireNonNull(prototype, "prototype must not be null");
+        String name = prototype.name;
+        if (PROTOTYPES.containsKey(name))
+            LOGGER.warn("A prototype with name {} is already registered", name);
+
+        PROTOTYPES.put(name, prototype);
+    }
+
+    /**
+     * Returns a optional containing the registered prototype, or an empty Optional is no prototype is registered with
+     * the given name.
+     *
+     * @param  <P>
+     *              prototype class
+     * @param  name
+     *              to query
+     *
+     * @return      the prototype
+     */
+    @SuppressWarnings("unchecked")
+    public static synchronized <P extends Prototype<?>> Optional<P> get(String name)
+    {
+        Objects.requireNonNull(name, "name must not be null");
+
+        if (PROTOTYPES.containsKey(name))
+            return Optional.of((P) PROTOTYPES.get(name));
+        return Optional.empty();
     }
 }
