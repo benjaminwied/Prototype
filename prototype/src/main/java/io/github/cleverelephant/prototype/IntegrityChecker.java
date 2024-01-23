@@ -69,7 +69,7 @@ public final class IntegrityChecker
         boolean failure = false;
 
         for (Prototype<?> prototype : manager.allPrototypes()) {
-            LOGGER.trace(Prototype.LOG_MARKER, "Verifying integrity of prototype {}", prototype.name);
+            LOGGER.trace(Prototype.LOG_MARKER, "Verifying integrity of prototype {}", prototype.name());
 
             failure = verifyIntegrity(manager, prototype) || failure;
         }
@@ -120,14 +120,14 @@ public final class IntegrityChecker
                 else if (manager.getPrototype(reference).isEmpty()) {
                     LOGGER.error(
                             Prototype.LOG_MARKER,
-                            "Integrity of prototype {} invalid: no referenced prototype found: {}", prototype.name,
+                            "Integrity of prototype {} invalid: no referenced prototype found: {}", prototype.name(),
                             reference.getTargetPrototypeName()
                     );
                     failure = true;
                 }
             }
         } catch (IllegalAccessException e) {
-            LOGGER.error(Prototype.LOG_MARKER, "Failed to verify integrity of prototype {}", prototype.name, e);
+            LOGGER.error(Prototype.LOG_MARKER, "Failed to verify integrity of prototype {}", prototype.name(), e);
             failure = true;
         }
 
@@ -169,7 +169,7 @@ public final class IntegrityChecker
         if (Prototype.class.isAssignableFrom(field.getType())) {
             LOGGER.error(
                     Prototype.LOG_MARKER,
-                    "Integrity of prototype {} invalid: prototype nesting not allowed (property {})", prototype.name,
+                    "Integrity of prototype {} invalid: prototype nesting not allowed (property {})", prototype.name(),
                     field.getName()
             );
             return true;

@@ -298,7 +298,7 @@ public final class PrototypeManager
     public synchronized void register(Prototype<?> prototype)
     {
         Objects.requireNonNull(prototype, "prototype must not be null");
-        String name = prototype.name;
+        String name = prototype.name();
         if (prototypes.containsKey(name))
             LOGGER.warn("A prototype with name {} is already registered", name);
 

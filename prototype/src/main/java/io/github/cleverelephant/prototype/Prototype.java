@@ -36,23 +36,25 @@ import org.slf4j.MarkerFactory;
  *
  * @see        PrototypeManager
  */
-public abstract class Prototype<T>
+public interface Prototype<T>
 {
     /**
      * Public LOG_MARKER that is used to log events.
      */
-    public static final Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
+    Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
 
     /**
      * This is the identifier of this prototype. A prototype can be obtained by using its name in
      * {@link PrototypeManager#getPrototype(String)}.
+     *
+     * @return prototype name
      */
-    public String name;
+    String name();
 
     /**
      * Builds this prototype into a concrete type.
      *
      * @return the type built
      */
-    public abstract T build();
+    T build();
 }
