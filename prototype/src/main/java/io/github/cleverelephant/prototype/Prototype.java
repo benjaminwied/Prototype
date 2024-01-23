@@ -23,12 +23,6 @@
  */
 package io.github.cleverelephant.prototype;
 
-import com.fasterxml.jackson.annotation.JacksonInject;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import com.fasterxml.jackson.annotation.OptBoolean;
-
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -42,7 +36,6 @@ import org.slf4j.MarkerFactory;
  *
  * @see        PrototypeManager
  */
-@JsonTypeInfo(use = Id.CLASS, include = As.WRAPPER_OBJECT)
 public abstract class Prototype<T>
 {
     /**
@@ -52,12 +45,8 @@ public abstract class Prototype<T>
 
     /**
      * This is the identifier of this prototype. A prototype can be obtained by using its name in
-     * {@link PrototypeManager#getPrototype(String)}.<br>
-     * <br>
-     * The name is computed from the path the prototype is loaded from, relative to the prototype root directory and
-     * without any file extension.
+     * {@link PrototypeManager#getPrototype(String)}.
      */
-    @JacksonInject(useInput = OptBoolean.FALSE, value = "name")
     public String name;
 
     /**

@@ -23,8 +23,6 @@
  */
 package io.github.cleverelephant.prototype;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +30,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -257,27 +254,6 @@ public final class PrototypeManager
             LOGGER.error(Prototype.LOG_MARKER, "Prototype name {} does not match required pattern", name);
             throw new IllegalArgumentException(name);
         }
-    }
-
-    /**
-     * Loads all prototypes found in the given file or directory, and all child directories and adds them to the
-     * collection.
-     *
-     * @param  path
-     *                     to search for prototypes
-     * @param  context
-     *                     prototype context to use
-     *
-     * @throws IOException
-     *                     if an IOException occurs while reading prototypes
-     *
-     * @see                SerializationManager#loadGameData(Path, java.util.function.Consumer, ExecutorService)
-     */
-    public void loadPrototypes(Path path, Map<String, Object> context) throws IOException
-    {
-        LuaInterpreter interpreter = new LuaInterpreter(path, context);
-        SerializationManager.loadGameData(Objects.requireNonNull(path, "path" + NULL), interpreter::runScript, null);
-        registerAll(SerializationManager.deserializePrototypes(interpreter.computeData(), context));
     }
 
     /**
