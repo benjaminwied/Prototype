@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author Benjamin Wied
  *
- * @see    #verifyIntegrity()
+ * @see    #verifyIntegrity(PrototypeManager)
  */
 public final class IntegrityChecker
 {
@@ -56,19 +56,22 @@ public final class IntegrityChecker
      * </ul>
      * If the check passes, this method returns. Otherwise, an {@code PrototypeException} is thrown.
      *
+     * @param  manager
+     *                            manager to verify
+     *
      * @throws PrototypeException
      *                            if an integrity problem is encountered.
      */
-    public static void verifyIntegrity()
+    public static void verifyIntegrity(PrototypeManager manager)
     {
         LOGGER.info(Prototype.LOG_MARKER, "Verifying integrity...");
 
         boolean failure = false;
 
-        for (Prototype<?> prototype : PrototypeManager.allPrototypes()) {
+        for (Prototype<?> prototype : manager.allPrototypes()) {
             LOGGER.trace(Prototype.LOG_MARKER, "Verifying integrity of prototype {}", prototype.name);
 
-            failure = verifyIntegrity(prototype) || failure;
+            failure = verifyIntegrity(manager, prototype) || failure;
         }
 
         if (failure)
@@ -80,25 +83,29 @@ public final class IntegrityChecker
     /**
      * Returns true if and only if an integrity problem is detected with the given {@link Prototype}.
      *
+     * @param  manager
+     *                   manager to verify
      * @param  prototype
      *                   to verify
      *
      * @return           true is an problem is encountered, false is everything is okay.
      */
-    public static boolean verifyIntegrity(Prototype<?> prototype)
+    public static boolean verifyIntegrity(PrototypeManager manager, Prototype<?> prototype)
     {
-        return verifySelfContaintedIntegrity(prototype) || verifyReferenceIntegrity(prototype);
+        return verifySelfContaintedIntegrity(prototype) || verifyReferenceIntegrity(manager, prototype);
     }
 
     /**
      * Verifies that all referenced prototypes exist.
      *
+     * @param  manager
+     *                   manager to verify
      * @param  prototype
      *                   to verify
      *
      * @return           true is an problem is encountered, false is everything is okay.
      */
-    public static boolean verifyReferenceIntegrity(Prototype<?> prototype)
+    public static boolean verifyReferenceIntegrity(PrototypeManager manager, Prototype<?> prototype)
     {
         boolean failure = false;
 
@@ -110,7 +117,7 @@ public final class IntegrityChecker
                 PrototypeReference<?, ?> reference = (PrototypeReference<?, ?>) field.get(prototype);
                 if (reference == null)
                     failure = verifyNullReference(field) || failure;
-                else if (reference.getOptionalPrototype().isEmpty()) {
+                else if (manager.getPrototype(reference).isEmpty()) {
                     LOGGER.error(
                             Prototype.LOG_MARKER,
                             "Integrity of prototype {} invalid: no referenced prototype found: {}", prototype.name,

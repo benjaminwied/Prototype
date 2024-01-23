@@ -24,7 +24,6 @@
 package io.github.cleverelephant.prototype;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.annotation.JacksonInject;
@@ -127,47 +126,6 @@ public final class PrototypeReference<T, P extends Prototype<T>>
             path = path.replace("/./", "/");
 
         return RELATIVE_PARENT_REMOVE.matcher(path).replaceAll("");
-    }
-
-    /**
-     * Builds a type of the prototype this reference points to.
-     *
-     * @return                          the type built
-     *
-     * @throws IllegalArgumentException
-     *                                  if the prototype this reference points to does not exist
-     */
-    public T createType()
-    {
-        return PrototypeManager.createType(targetPrototypeName);
-    }
-
-    /**
-     * Returns an Optional containing the prototype this reference points to, or an empty Optional if no prototype could
-     * be found. This is a delegation method to {@link PrototypeManager#getPrototype(String)}.
-     *
-     * @return the prototype this reference points to
-     *
-     * @see    PrototypeManager#getPrototype(String)
-     * @see    #getPrototype()
-     */
-    public Optional<P> getOptionalPrototype()
-    {
-        return PrototypeManager.<T, P>getPrototype(targetPrototypeName);
-    }
-
-    /**
-     * Returns the prototype this reference points to, or throws an {@link PrototypeException} if not prototype could be
-     * found.
-     *
-     * @return the prototype this reference points to
-     *
-     * @see    #getOptionalPrototype()
-     */
-    public P getPrototype()
-    {
-        return getOptionalPrototype()
-                .orElseThrow(() -> new PrototypeException("no prototype found with name " + targetPrototypeName));
     }
 
     /**

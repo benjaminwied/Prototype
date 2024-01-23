@@ -50,27 +50,26 @@ public final class PrototypeManager
 {
     private static final String NULL = " must not be null";
     private static final String NAME_NULL = "name" + NULL;
+    private static final String REF_NULL = "reference" + NULL;
 
     private static final Pattern PROTOTYPE_NAME_PATTERN = Pattern
             .compile("^\\w+(?:/\\w+)*$", Pattern.UNICODE_CHARACTER_CLASS);
     private static final Logger LOGGER = LoggerFactory.getLogger(PrototypeManager.class);
-    private static final Map<String, Prototype<?>> PROTOTYPES = new HashMap<>();
 
-    private PrototypeManager()
+    private final Map<String, Prototype<?>> prototypes;
+
+    public PrototypeManager()
     {
-        throw new UnsupportedOperationException();
+        prototypes = new HashMap<>();
     }
 
     /**
      * @return a unmodifiable snapshot of all prototypes currently registered
      */
-    public static Set<Prototype<?>> allPrototypes()
+    public Set<Prototype<?>> allPrototypes()
     {
         return Collections.unmodifiableSet(
-                new HashSet<>(
-                        keys().stream().map(PrototypeManager::get).filter(Optional::isPresent).map(Optional::get)
-                                .toList()
-                )
+                new HashSet<>(keys().stream().map(this::get).filter(Optional::isPresent).map(Optional::get).toList())
         );
     }
 
@@ -92,7 +91,7 @@ public final class PrototypeManager
      * @throws IllegalArgumentException
      *                                  if name is invalid
      */
-    public static <T, P extends Prototype<T>> Optional<P> getPrototype(String name)
+    public <T, P extends Prototype<T>> Optional<P> getPrototype(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
         checkName(name);
@@ -100,9 +99,9 @@ public final class PrototypeManager
         return getPrototypeNoNameCheck(name);
     }
 
-    private static <P extends Prototype<?>> Optional<P> getPrototypeNoNameCheck(String name)
+    private <P extends Prototype<?>> Optional<P> getPrototypeNoNameCheck(String name)
     {
-        Optional<P> prototype = PrototypeManager.<P>get(name);
+        Optional<P> prototype = this.<P>get(name);
         if (prototype.isEmpty()) {
             LOGGER.trace(Prototype.LOG_MARKER, "No prototypes found for name {}", name);
             return Optional.empty();
@@ -128,11 +127,86 @@ public final class PrototypeManager
      * @see                             Prototype#build()
      * @see                             #optionalCreateType(String)
      */
-    public static <T> T createType(String name)
+    public <T> T createType(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
 
-        return PrototypeManager.<T>optionalCreateType(name).orElseThrow(() -> new IllegalArgumentException(name));
+        return this.<T>optionalCreateType(name).orElseThrow(() -> new IllegalArgumentException(name));
+    }
+
+    /**
+     * Returns an Optional containing the prototype the reference points to, or an empty Optional if no prototype could
+     * be found.
+     *
+     * @param  <T>
+     *                                  type
+     * @param  <P>
+     *                                  prototype
+     * @param  reference
+     *                                  prototype reference
+     *
+     * @return                          the prototype with the given name
+     *
+     * @throws NullPointerException
+     *                                  if name is null
+     * @throws IllegalArgumentException
+     *                                  if name is invalid
+     */
+    public <T, P extends Prototype<T>> Optional<P> getPrototype(PrototypeReference<T, P> reference)
+    {
+        Objects.requireNonNull(reference, REF_NULL);
+        return getPrototypeNoNameCheck(reference.getTargetPrototypeName());
+    }
+
+    /**
+     * Builds a type for the given reference. If no such prototype could be found, fail with an
+     * {@link IllegalArgumentException}.
+     *
+     * @param  <T>
+     *                                  type
+     * @param  reference
+     *                                  prototype reference
+     *
+     * @return                          the type built
+     *
+     * @throws IllegalArgumentException
+     *                                  if not prototype was found
+     *
+     * @see                             Prototype#build()
+     * @see                             #optionalCreateType(String)
+     */
+    public <T> T createType(PrototypeReference<T, ?> reference)
+    {
+        Objects.requireNonNull(reference, REF_NULL);
+        return createType(reference.getTargetPrototypeName());
+    }
+
+    /**
+     * Builds a type using the prototype for the given reference. If no such prototype could be found, returns an empty
+     * optional.
+     *
+     * @param  <T>
+     *                                       type
+     * @param  reference
+     *                                       prototype reference
+     *
+     * @return                               an optional containing the type built, or an empty optional if no prototype
+     *                                       was found
+     *
+     * @throws NullPointerException
+     *                                       if name is null
+     * @throws IllegalArgumentException
+     *                                       if name is invalid
+     * @throws UnsupportedOperationException
+     *                                       if not builder was found for the given prototype
+     *
+     * @see                                  Prototype#build()
+     * @see                                  #createType(String)
+     */
+    public <T> Optional<T> optionalCreateType(PrototypeReference<T, ?> reference)
+    {
+        Objects.requireNonNull(reference, REF_NULL);
+        return optionalCreateType(reference.getTargetPrototypeName());
     }
 
     /**
@@ -157,7 +231,7 @@ public final class PrototypeManager
      * @see                                  Prototype#build()
      * @see                                  #createType(String)
      */
-    public static <T> Optional<T> optionalCreateType(String name)
+    public <T> Optional<T> optionalCreateType(String name)
     {
         Objects.requireNonNull(name, NAME_NULL);
         checkName(name);
@@ -199,7 +273,7 @@ public final class PrototypeManager
      *
      * @see                SerializationManager#loadGameData(Path, java.util.function.Consumer, ExecutorService)
      */
-    public static void loadPrototypes(Path path, Map<String, Object> context) throws IOException
+    public void loadPrototypes(Path path, Map<String, Object> context) throws IOException
     {
         LuaInterpreter interpreter = new LuaInterpreter(path, context);
         SerializationManager.loadGameData(Objects.requireNonNull(path, "path" + NULL), interpreter::runScript, null);
@@ -209,17 +283,17 @@ public final class PrototypeManager
     /**
      * @return a (immutable) set containing the names of all registered {@link Prototype Prototypes}
      */
-    public static synchronized Set<String> keys()
+    public synchronized Set<String> keys()
     {
-        return Collections.unmodifiableSet(PROTOTYPES.keySet());
+        return Collections.unmodifiableSet(prototypes.keySet());
     }
 
     /**
      * Clears the registry, forcing all prototypes to regenerate.
      */
-    public static synchronized void clear()
+    public synchronized void clear()
     {
-        PROTOTYPES.clear();
+        prototypes.clear();
     }
 
     /**
@@ -230,7 +304,7 @@ public final class PrototypeManager
      *
      * @see              #register(Prototype)
      */
-    public static synchronized void registerAll(Map<String, Prototype<?>> prototypes)
+    public synchronized void registerAll(Map<String, Prototype<?>> prototypes)
     {
         for (Map.Entry<String, Prototype<?>> entry : prototypes.entrySet())
             register(entry.getValue());
@@ -245,14 +319,14 @@ public final class PrototypeManager
      * @throws NullPointerException
      *                              if the prototype is null
      */
-    public static synchronized void register(Prototype<?> prototype)
+    public synchronized void register(Prototype<?> prototype)
     {
         Objects.requireNonNull(prototype, "prototype must not be null");
         String name = prototype.name;
-        if (PROTOTYPES.containsKey(name))
+        if (prototypes.containsKey(name))
             LOGGER.warn("A prototype with name {} is already registered", name);
 
-        PROTOTYPES.put(name, prototype);
+        prototypes.put(name, prototype);
     }
 
     /**
@@ -267,12 +341,12 @@ public final class PrototypeManager
      * @return      the prototype
      */
     @SuppressWarnings("unchecked")
-    public static synchronized <P extends Prototype<?>> Optional<P> get(String name)
+    private synchronized <P extends Prototype<?>> Optional<P> get(String name)
     {
         Objects.requireNonNull(name, "name must not be null");
 
-        if (PROTOTYPES.containsKey(name))
-            return Optional.of((P) PROTOTYPES.get(name));
+        if (prototypes.containsKey(name))
+            return Optional.of((P) prototypes.get(name));
         return Optional.empty();
     }
 }
