@@ -21,40 +21,56 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.cleverelephant.prototype;
-
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
+package io.github.benjaminwied.prototype;
 
 /**
- * Defines a prototype, which can later be build into a concrete type.
+ * Exception thrown by most prototype related-methods.
  *
- * @author     Benjamin Wied
- *
- * @param  <T>
- *             type which is represented by this Prototype
- *
- * @see        PrototypeManager
+ * @author Benjamin Wied
  */
-public interface Prototype<T>
+public class PrototypeException extends RuntimeException
 {
-    /**
-     * Public LOG_MARKER that is used to log events.
-     */
-    Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
 
     /**
-     * This is the identifier of this prototype. A prototype can be obtained by using its name in
-     * {@link PrototypeManager#getPrototype(String)}.
-     *
-     * @return prototype name
+     * Constructs a new {@code PrototypeException} with no detail message and cause.
      */
-    String name();
+    public PrototypeException()
+    {
+    }
 
     /**
-     * Builds this prototype into a concrete type.
+     * Constructs a new {@code PrototypeException} with the given detail message and cause.
      *
-     * @return the type built
+     * @param message
+     *                detail message
+     * @param cause
+     *                exception cause
      */
-    T build();
+    public PrototypeException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    /**
+     * Constructs a new {@code PrototypeException} with the given detail message and no cause.
+     *
+     * @param message
+     *                detail message
+     */
+    public PrototypeException(String message)
+    {
+        super(message);
+    }
+
+    /**
+     * Constructs a new {@code PrototypeException} with no detail message and the given cause.
+     *
+     * @param cause
+     *              exception cause
+     */
+    public PrototypeException(Throwable cause)
+    {
+        super(cause);
+    }
+
 }

@@ -1,4 +1,4 @@
-package io.github.cleverelephant.prototype;
+package io.github.benjaminwied.prototype;
 
 import java.util.function.Function;
 import java.util.function.Supplier;

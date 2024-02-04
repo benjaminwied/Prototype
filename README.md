@@ -14,14 +14,14 @@
   <p align="center">
     A small library for loading prototypes from lua files in java.
     <!--<br />
-    <a href="https://github.com/CleverElephant/Prototype/wiki"><strong>Explore the docs »</strong></a>-->
+    <a href="https://github.com/benjaminwied/Prototype/wiki"><strong>Explore the docs »</strong></a>-->
     <br />
     <br />
-    <a href="https://github.com/CleverElephant/Prototype">View Code</a>
+    <a href="https://github.com/benjaminwied/Prototype">View Code</a>
     ·
-    <a href="https://github.com/CleverElephant/Prototype/issues">Report Bug</a>
+    <a href="https://github.com/benjaminwied/Prototype/issues">Report Bug</a>
     ·
-    <a href="https://github.com/CleverElephant/Prototype/discussions">Request Feature</a>
+    <a href="https://github.com/benjaminwied/Prototype/discussions">Request Feature</a>
   </p>
 </div>
 
@@ -107,7 +107,7 @@ prototypes["anotherPrototype"] = {
 
 Use gradle
 ```gradle
-implementation 'io.github.cleverelephant:prototype:0.3.0'
+implementation 'io.github.benjaminwied:prototype:0.3.0'
 ```
 
 ## Contributing
@@ -130,7 +130,7 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 
 ## Contact
 
-Project Link: [https://github.com/CleverElephant/Prototype](https://github.com/CleverElephant/Prototype)
+Project Link: [https://github.com/benjaminwied/Prototype](https://github.com/benjaminwied/Prototype)
 
 
 ## Acknowledgments
@@ -139,13 +139,13 @@ Project Link: [https://github.com/CleverElephant/Prototype](https://github.com/C
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/CleverElephant/Prototype.svg?style=flat
-[contributors-url]: https://github.com/CleverElephant/Prototype/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/CleverElephant/Prototype.svg?style=flat
-[forks-url]: https://github.com/CleverElephant/Prototype/network/members
-[stars-shield]: https://img.shields.io/github/stars/CleverElephant/Prototype.svg?style=flat
-[stars-url]: https://github.com/CleverElephant/Prototype/stargazers
-[issues-shield]: https://img.shields.io/github/issues/CleverElephant/Prototype.svg?style=flat
-[issues-url]: https://github.com/CleverElephant/Prototype/issues
-[license-shield]: https://img.shields.io/github/license/CleverElephant/Prototype.svg?style=flat
-[license-url]: https://github.com/CleverElephant/Prototype/blob/master/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/benjaminwied/Prototype.svg?style=flat
+[contributors-url]: https://github.com/benjaminwied/Prototype/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/benjaminwied/Prototype.svg?style=flat
+[forks-url]: https://github.com/benjaminwied/Prototype/network/members
+[stars-shield]: https://img.shields.io/github/stars/benjaminwied/Prototype.svg?style=flat
+[stars-url]: https://github.com/benjaminwied/Prototype/stargazers
+[issues-shield]: https://img.shields.io/github/issues/benjaminwied/Prototype.svg?style=flat
+[issues-url]: https://github.com/benjaminwied/Prototype/issues
+[license-shield]: https://img.shields.io/github/license/benjaminwied/Prototype.svg?style=flat
+[license-url]: https://github.com/benjaminwied/Prototype/blob/master/LICENSE

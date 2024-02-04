@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.cleverelephant.prototypetest;
+package io.github.benjaminwied.prototypetest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.InjectableValues;
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.github.cleverelephant.prototype.PrototypeReference;
+import io.github.benjaminwied.prototype.PrototypeReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

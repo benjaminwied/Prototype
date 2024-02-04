@@ -9,7 +9,7 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.cleverelephant"
+    group = "io.github.benjaminwied"
     version = scmVersion.version
     
     apply plugin: "java-library"
@@ -36,7 +36,7 @@ allprojects {
         ext {
             year = Calendar.getInstance().get(Calendar.YEAR)
             name = "Benjamin Wied"
-            email = "88872078+CleverElephant@users.noreply.github.com"
+            email = "benjaminwied@mailbox.org"
         }
     }
     
@@ -59,7 +59,7 @@ allprojects {
                 
                  pom {
                     description = "A small library for loading prototypes from lua files in java."
-                    url = "https://github.com/CleverElephant/Prototype"
+                    url = "https://github.com/benjaminwied/Prototype"
                     
                     licenses {
                         license {
@@ -70,16 +70,16 @@ allprojects {
                     
                     developers {
                         developer {
-                            id = "CleverElephant"
+                            id = "benjaminwied"
                             name = "Benjamin Wied"
-                            email = "88872078+CleverElephant@users.noreply.github.com"
+                            email = "benjaminwied@mailbox.org"
                         }
                     }
                     
                     scm {
-                        connection = "scm:git@github.com:CleverElephant/Prototype.git"
-                        developerConnection = "scm:git@github.com:CleverElephant/Prototype.git"
-                        url = "https://github.com/CleverElephant/Prototype"
+                        connection = "scm:git@github.com:benjaminwied/Prototype.git"
+                        developerConnection = "scm:git@github.com:benjaminwied/Prototype.git"
+                        url = "https://github.com/benjaminwied/Prototype"
                     }
                 }
             }

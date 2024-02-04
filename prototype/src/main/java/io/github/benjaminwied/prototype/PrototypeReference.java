@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.cleverelephant.prototype;
+package io.github.benjaminwied.prototype;
 
 import java.util.Objects;
 import java.util.regex.Pattern;

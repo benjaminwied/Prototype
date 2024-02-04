@@ -21,56 +21,40 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package io.github.cleverelephant.prototype;
+package io.github.benjaminwied.prototype;
+
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 /**
- * Exception thrown by most prototype related-methods.
+ * Defines a prototype, which can later be build into a concrete type.
  *
- * @author Benjamin Wied
+ * @author     Benjamin Wied
+ *
+ * @param  <T>
+ *             type which is represented by this Prototype
+ *
+ * @see        PrototypeManager
  */
-public class PrototypeException extends RuntimeException
+public interface Prototype<T>
 {
-
     /**
-     * Constructs a new {@code PrototypeException} with no detail message and cause.
+     * Public LOG_MARKER that is used to log events.
      */
-    public PrototypeException()
-    {
-    }
+    Marker LOG_MARKER = MarkerFactory.getMarker("prototype");
 
     /**
-     * Constructs a new {@code PrototypeException} with the given detail message and cause.
+     * This is the identifier of this prototype. A prototype can be obtained by using its name in
+     * {@link PrototypeManager#getPrototype(String)}.
      *
-     * @param message
-     *                detail message
-     * @param cause
-     *                exception cause
+     * @return prototype name
      */
-    public PrototypeException(String message, Throwable cause)
-    {
-        super(message, cause);
-    }
+    String name();
 
     /**
-     * Constructs a new {@code PrototypeException} with the given detail message and no cause.
+     * Builds this prototype into a concrete type.
      *
-     * @param message
-     *                detail message
+     * @return the type built
      */
-    public PrototypeException(String message)
-    {
-        super(message);
-    }
-
-    /**
-     * Constructs a new {@code PrototypeException} with no detail message and the given cause.
-     *
-     * @param cause
-     *              exception cause
-     */
-    public PrototypeException(Throwable cause)
-    {
-        super(cause);
-    }
-
+    T build();
 }
